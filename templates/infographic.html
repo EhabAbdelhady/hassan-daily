@@ -6,11 +6,11 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  {% macro change_pill(change, small=false) %}
+  {% macro change_pill(change, key, small=false) %}
     {% if change %}
     <div class="change-pill {{ change.direction }}{% if small %} small{% endif %}" style="direction: ltr;">
       {% if change.direction == 'up' %}<span style="font-size: 13px;">▲</span>{% elif change.direction == 'down' %}<span style="font-size: 13px;">▼</span>{% endif %}
-      <span>{{ change.text }}</span>
+      <span data-verify="{{ key }}">{{ change.text }}</span>
       {% if small %}<span class="change-label">عن أمس</span>{% endif %}
     </div>
     {% endif %}
@@ -58,25 +58,25 @@
         <div class="gold-row">
           <span class="gold-karat">24 عيار</span>
           <div>
-            <span class="gold-price">{{ gold.price_24k }}</span>
+            <span class="gold-price" data-verify="gold_24k">{{ gold.price_24k }}</span>
             <span class="gold-unit">ج.م</span>
           </div>
         </div>
         <div class="gold-row">
           <span class="gold-karat">21 عيار</span>
           <div>
-            <span class="gold-price">{{ gold.price_21k }}</span>
+            <span class="gold-price" data-verify="gold_21k">{{ gold.price_21k }}</span>
             <span class="gold-unit">ج.م</span>
           </div>
         </div>
         <div class="gold-row">
           <span class="gold-karat">18 عيار</span>
           <div>
-            <span class="gold-price">{{ gold.price_18k }}</span>
+            <span class="gold-price" data-verify="gold_18k">{{ gold.price_18k }}</span>
             <span class="gold-unit">ج.م</span>
           </div>
         </div>
-        {{ change_pill(gold.change, small=true) }}
+        {{ change_pill(gold.change, 'gold_change', small=true) }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ gold.source }}</span></div>
@@ -91,9 +91,9 @@
         <span class="card-header-title">Bitcoin</span>
       </div>
       <div class="card-body">
-        <div class="hero-price">{{ crypto.price }}</div>
+        <div class="hero-price" data-verify="bitcoin">{{ crypto.price }}</div>
         <div class="hero-unit">دولار</div>
-        {{ change_pill(crypto.change) }}
+        {{ change_pill(crypto.change, 'bitcoin_change') }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ crypto.source }}</span></div>
@@ -110,15 +110,15 @@
       <div class="card-body" style="padding: 4px 10px;">
         <div class="fx-vertical-wrap">
           <div class="fx-v-item">
-            <span class="fx-price">{{ fx.buy }}</span>
+            <span class="fx-price" data-verify="usd_buy">{{ fx.buy }}</span>
             <span class="fx-label">شراء</span>
           </div>
           <div class="fx-v-item">
-            <span class="fx-price">{{ fx.sell }}</span>
+            <span class="fx-price" data-verify="usd_sell">{{ fx.sell }}</span>
             <span class="fx-label">بيع</span>
           </div>
         </div>
-        {{ change_pill(fx.change, small=true) }}
+        {{ change_pill(fx.change, 'usd_change', small=true) }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ fx.source }}</span></div>
@@ -134,9 +134,9 @@
         <span class="card-header-title">Brent</span>
       </div>
       <div class="card-body">
-        <div class="hero-price">{{ oil.price }}</div>
+        <div class="hero-price" data-verify="brent">{{ oil.price }}</div>
         <div class="hero-unit">دولار / برميل</div>
-        {{ change_pill(oil.change) }}
+        {{ change_pill(oil.change, 'brent_change') }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ oil.source }}</span></div>

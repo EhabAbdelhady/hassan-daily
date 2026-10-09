@@ -42,6 +42,7 @@ class Settings:
     GMAIL_APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "")
     ALERT_RECIPIENT_EMAIL: str = os.getenv("ALERT_RECIPIENT_EMAIL", os.getenv("GMAIL_USER", ""))
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+    RESEND_FROM_EMAIL: str = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
 
     # Image Hosting
     IMAGE_HOSTING: Literal["cloudinary", "s3"] = os.getenv("IMAGE_HOSTING", "cloudinary").lower() # type: ignore

@@ -13,3 +13,4 @@ python-dotenv>=1.0.1
 pillow>=10.4.0
 resend>=2.1.0
 pytest>=8.0
+rapidocr_onnxruntime>=1.3

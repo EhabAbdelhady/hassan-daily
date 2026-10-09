@@ -1,102 +1,136 @@
-"""Aggregator module that coordinates all collectors and delta tracking."""
+"""Aggregator module that coordinates all collectors and day-over-day change tracking."""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+from .base import CollectorError
 from .gold import GoldCollector
 from .fx import FXCollector
 from .crypto import CryptoCollector
 from .oil import OilCollector
 from ..storage.history import HistoryStorage
-from ..utils.arabic_date import format_arabic_date
+from ..utils.arabic_date import format_arabic_date, format_arabic_timestamp, get_cairo_now
+
+
+def format_number(value: float, max_decimals: int = 2, min_decimals: int = 0) -> str:
+    """Formats with thousands separators, dropping trailing zeros: 6994.25 → 6,994.25, 6120.0 → 6,120."""
+    text = f"{value:,.{max_decimals}f}"
+    if "." in text:
+        whole, frac = text.split(".")
+        frac = frac.rstrip("0").ljust(min_decimals, "0")
+        text = f"{whole}.{frac}" if frac else whole
+    return text
 
 
 class MarketDataAggregator:
-    def __init__(self):
-        self.storage = HistoryStorage()
+    def __init__(self, storage: Optional[HistoryStorage] = None):
+        self.storage = storage or HistoryStorage()
         self.gold_collector = GoldCollector()
         self.fx_collector = FXCollector()
         self.crypto_collector = CryptoCollector()
         self.oil_collector = OilCollector()
 
-    def fetch_all(self, save_to_history: bool = True) -> Dict[str, Any]:
-        """Fetches all market indicators, calculates day-over-day changes, and updates history."""
-        latest_record = self.storage.get_latest_record()
+    def fetch_all(self) -> Dict[str, Any]:
+        """Fetches all indicators and builds the template/AI payload.
 
-        print("[MarketData] Fetching Gold prices (iSagha)...")
-        gold = self.gold_collector.fetch(fallback_history=latest_record)
+        A source that fails is left as None and its error is listed in payload["errors"];
+        nothing is ever filled in with guessed or old values.
+        """
+        previous = self.storage.get_previous_day_record()
+        errors = []
 
-        print("[MarketData] Fetching USD/EGP rates (CBE)...")
-        fx = self.fx_collector.fetch(fallback_history=latest_record)
+        def collect(label, collector):
+            print(f"[MarketData] Fetching {label}...")
+            try:
+                return collector.fetch()
+            except CollectorError as e:
+                print(f"[MarketData] FAILED {label}: {e}")
+                errors.append(f"{label}: {e}")
+                return None
 
-        print("[MarketData] Fetching Bitcoin price (CoinGecko)...")
-        crypto = self.crypto_collector.fetch(fallback_history=latest_record)
+        gold = collect("Gold (iSagha)", self.gold_collector)
+        fx = collect("USD/EGP (CBE)", self.fx_collector)
+        crypto = collect("Bitcoin (CoinGecko/Binance)", self.crypto_collector)
+        oil = collect("Brent (Yahoo Finance)", self.oil_collector)
 
-        print("[MarketData] Fetching Brent Crude oil (Yahoo Finance)...")
-        oil = self.oil_collector.fetch(fallback_history=latest_record)
+        def change(current: float, path: tuple) -> Optional[Dict[str, Any]]:
+            prev = previous
+            for key in path:
+                prev = (prev or {}).get(key)
+            if not prev:
+                return None
+            pct = (current - prev) / prev * 100
+            if round(pct, 2) == 0:
+                return {"text": "0.00%", "pct": pct, "direction": "flat"}
+            return {"text": f"{pct:+.2f}%", "pct": pct, "direction": "up" if pct > 0 else "down"}
 
-        # Day-over-day delta calculation from history if available
-        if latest_record:
-            # Gold 21k delta
-            prev_g21 = latest_record.get("gold", {}).get("21k")
-            g_pct, _, g_str, g_pos = self.storage.calculate_delta(gold.price_21k, prev_g21)
-            
-            # USD buy delta
-            prev_usd = latest_record.get("usd_egp", {}).get("buy")
-            usd_pct, _, usd_str, usd_pos = self.storage.calculate_delta(fx.buy, prev_usd)
-        else:
-            g_str, g_pos = "0.00%", True
-            usd_str, usd_pos = "0.00%", True
+        now = get_cairo_now()
+        payload: Dict[str, Any] = {
+            "date_arabic": format_arabic_date(now),
+            "date": now.strftime("%Y-%m-%d"),
+            "previous_date": previous.get("date") if previous else None,
+            "errors": errors,
+            "gold": None,
+            "fx": None,
+            "crypto": None,
+            "oil": None,
+        }
 
-        # Save current record to history if requested
-        if save_to_history:
-            self.storage.save_record(
-                gold_24k=gold.price_24k,
-                gold_21k=gold.price_21k,
-                gold_18k=gold.price_18k,
-                usd_buy=fx.buy,
-                usd_sell=fx.sell,
-                btc_price=crypto.price,
-                brent_price=oil.price
-            )
-
-        # Construct payload ready for Jinja2 template and AI analysis
-        return {
-            "date_arabic": format_arabic_date(),
-            "gold": {
-                "price_24k": f"{gold.price_24k:,.1f}",
-                "price_21k": f"{gold.price_21k:,.1f}",
-                "price_18k": f"{gold.price_18k:,.1f}",
+        if gold:
+            payload["gold"] = {
+                "price_24k": format_number(gold.price_24k),
+                "price_21k": format_number(gold.price_21k),
+                "price_18k": format_number(gold.price_18k),
                 "raw_24k": gold.price_24k,
                 "raw_21k": gold.price_21k,
                 "raw_18k": gold.price_18k,
                 "source": gold.source,
-                "updated_at": gold.updated_at
-            },
-            "crypto": {
-                "name": crypto.name,
-                "price": f"{crypto.price:,.1f}",
-                "raw_price": crypto.price,
-                "change_percent": f"{crypto.change_percent:+.2f}%",
-                "is_positive": crypto.is_positive,
-                "source": crypto.source,
-                "updated_at": crypto.updated_at
-            },
-            "fx": {
-                "currency": fx.currency,
+                "updated_at": format_arabic_timestamp(gold.updated_at),
+                "updated_at_iso": gold.updated_at.isoformat(),
+                "change": change(gold.price_21k, ("gold", "21k")),
+            }
+        if fx:
+            payload["fx"] = {
                 "buy": f"{fx.buy:.2f}",
                 "sell": f"{fx.sell:.2f}",
                 "raw_buy": fx.buy,
                 "raw_sell": fx.sell,
                 "source": fx.source,
-                "note": fx.note,
-                "updated_at": fx.updated_at
-            },
-            "oil": {
-                "name": oil.name,
+                "updated_at": format_arabic_timestamp(fx.updated_at, include_time=not fx.date_only),
+                "updated_at_iso": fx.updated_at.isoformat(),
+                "date_only": fx.date_only,
+                "change": change(fx.buy, ("usd_egp", "buy")),
+            }
+        if crypto:
+            payload["crypto"] = {
+                "price": format_number(crypto.price, max_decimals=0),
+                "raw_price": crypto.price,
+                "source": crypto.source,
+                "updated_at": format_arabic_timestamp(crypto.updated_at),
+                "updated_at_iso": crypto.updated_at.isoformat(),
+                "change": change(crypto.price, ("bitcoin", "price")),
+            }
+        if oil:
+            payload["oil"] = {
                 "price": f"{oil.price:.2f}",
                 "raw_price": oil.price,
-                "change_percent": f"{oil.change_percent:+.2f}%",
-                "is_positive": oil.is_positive,
                 "source": oil.source,
-                "updated_at": oil.updated_at
+                "updated_at": format_arabic_timestamp(oil.updated_at),
+                "updated_at_iso": oil.updated_at.isoformat(),
+                "change": change(oil.price, ("brent", "price")),
             }
-        }
+
+        return payload
+
+    def save_history(self, payload: Dict[str, Any]) -> None:
+        """Stores today's values so tomorrow's run can show the daily change. Requires complete data."""
+        if payload["errors"]:
+            raise ValueError("Refusing to save incomplete data to history")
+        self.storage.save_record(
+            gold_24k=payload["gold"]["raw_24k"],
+            gold_21k=payload["gold"]["raw_21k"],
+            gold_18k=payload["gold"]["raw_18k"],
+            usd_buy=payload["fx"]["raw_buy"],
+            usd_sell=payload["fx"]["raw_sell"],
+            btc_price=payload["crypto"]["raw_price"],
+            brent_price=payload["oil"]["raw_price"],
+        )

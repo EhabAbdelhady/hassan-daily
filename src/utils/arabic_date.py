@@ -1,6 +1,9 @@
 """Arabic date and time formatting utilities."""
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+CAIRO_TZ = ZoneInfo("Africa/Cairo")
 
 ARABIC_DAYS = {
     0: "الإثنين",
@@ -29,46 +32,26 @@ ARABIC_MONTHS = {
 
 
 def get_cairo_now() -> datetime:
-    """Returns the current datetime in Egypt local time (UTC+2 or UTC+3)."""
-    # Egypt standard time is UTC+2, daylight savings UTC+3
-    # Use UTC+3 for summer / UTC+2 for winter
-    # Default to UTC+3 for now
-    cairo_tz = timezone(timedelta(hours=3))
-    return datetime.now(cairo_tz)
+    """Returns the current datetime in Egypt local time (handles daylight saving)."""
+    return datetime.now(CAIRO_TZ)
 
 
 def format_arabic_date(dt: datetime = None) -> str:
     """Formats datetime to Arabic Gregorian date: e.g. الثلاثاء 29 سبتمبر 2026"""
     if dt is None:
         dt = get_cairo_now()
-        
+
     day_name = ARABIC_DAYS[dt.weekday()]
-    day_num = dt.day
-    month_name = ARABIC_MONTHS[dt.month]
-    year_num = dt.year
-    
-    return f"{day_name} {day_num} {month_name} {year_num}"
+    return f"{day_name} {dt.day} {ARABIC_MONTHS[dt.month]} {dt.year}"
 
 
-def format_arabic_timestamp(dt: datetime = None, is_gmt: bool = False) -> str:
-    """Formats card footer update timestamp: آخر تحديث 29 سبتمبر 2026 (الساعة 01:09 صباحاً)"""
-    if dt is None:
-        dt = get_cairo_now() if not is_gmt else datetime.now(timezone.utc)
-        
-    day_num = dt.day
-    month_name = ARABIC_MONTHS[dt.month]
-    year_num = dt.year
-    
-    hour = dt.hour
-    minute = dt.minute
-    
-    if is_gmt:
-        time_str = f"{hour:02d}:{minute:02d} GMT"
-    else:
-        period = "صباحاً" if hour < 12 else "مساءً"
-        h_12 = hour % 12
-        if h_12 == 0:
-            h_12 = 12
-        time_str = f"{h_12:02d}:{minute:02d} {period}"
-        
-    return f"آخر تحديث {day_num} {month_name} {year_num}\n(الساعة {time_str})"
+def format_arabic_timestamp(dt: datetime, include_time: bool = True) -> str:
+    """Formats a source's last-update time in Cairo time: آخر تحديث 29 سبتمبر 2026 (الساعة 01:09 صباحاً)"""
+    dt = dt.astimezone(CAIRO_TZ)
+    date_str = f"آخر تحديث {dt.day} {ARABIC_MONTHS[dt.month]} {dt.year}"
+    if not include_time:
+        return date_str
+
+    period = "صباحاً" if dt.hour < 12 else "مساءً"
+    h_12 = dt.hour % 12 or 12
+    return f"{date_str}\n(الساعة {h_12:02d}:{dt.minute:02d} {period})"

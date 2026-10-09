@@ -1,61 +1,29 @@
-"""Brent crude oil collector (Yahoo Finance BZ=F)."""
+"""Brent crude oil collector (Yahoo Finance BZ=F futures)."""
 
 import yfinance as yf
-from typing import Optional, Dict
 
-from .base import OilData
-from ..utils.arabic_date import format_arabic_timestamp
+from .base import OilData, CollectorError
 
 
 class OilCollector:
-    NAME = "Reuters"
+    NAME = "Yahoo Finance"
 
     def __init__(self, symbol: str = "BZ=F"):
         self.symbol = symbol
 
-    def fetch(self, fallback_history: Optional[Dict] = None) -> OilData:
-        """Fetches live Brent crude oil price and change from Yahoo Finance."""
+    def fetch(self) -> OilData:
+        """Fetches the latest Brent crude price and the time of that quote."""
         try:
-            ticker = yf.Ticker(self.symbol)
-            info = ticker.fast_info
-            price = round(float(info.last_price), 2)
-            prev = float(info.previous_close)
-            
-            if prev > 0:
-                change = round(((price - prev) / prev) * 100, 2)
-            else:
-                change = 0.0
-                
-            return OilData(
-                name="Brent",
-                price=price,
-                change_percent=change,
-                is_positive=change >= 0,
-                source="Reuters",
-                updated_at=format_arabic_timestamp(is_gmt=True)
-            )
+            # Last 5 days of 5-minute bars so weekends/holidays still return the last trade
+            bars = yf.Ticker(self.symbol).history(period="5d", interval="5m")
         except Exception as e:
-            print(f"[OilCollector] Yahoo Finance error: {e}")
+            raise CollectorError(f"Yahoo Finance request failed: {e}") from e
 
-        # Fallback to history
-        if fallback_history and "brent" in fallback_history:
-            b = fallback_history["brent"]
-            price = float(b.get("price", 105.91))
-            return OilData(
-                name="Brent",
-                price=price,
-                change_percent=0.0,
-                is_positive=True,
-                source="Reuters (آخر قيمة مسجلة)",
-                updated_at=format_arabic_timestamp(is_gmt=True)
-            )
+        if bars.empty:
+            raise CollectorError("Yahoo Finance returned no Brent prices")
 
-        # Baseline default
         return OilData(
-            name="Brent",
-            price=105.91,
-            change_percent=0.60,
-            is_positive=True,
-            source="Reuters",
-            updated_at=format_arabic_timestamp(is_gmt=True)
+            price=round(float(bars["Close"].iloc[-1]), 2),
+            source=self.NAME,
+            updated_at=bars.index[-1].to_pydatetime(),
         )

@@ -1,6 +1,6 @@
 """Market data collectors package."""
 
-from .base import GoldData, CryptoData, FXData, OilData
+from .base import GoldData, CryptoData, FXData, OilData, CollectorError
 from .gold import GoldCollector
 from .fx import FXCollector
 from .crypto import CryptoCollector
@@ -11,6 +11,7 @@ __all__ = [
     "CryptoData",
     "FXData",
     "OilData",
+    "CollectorError",
     "GoldCollector",
     "FXCollector",
     "CryptoCollector",

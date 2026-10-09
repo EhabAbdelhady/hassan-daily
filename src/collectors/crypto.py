@@ -1,10 +1,10 @@
-"""Bitcoin cryptocurrency collector (CoinGecko with Binance fallback)."""
+"""Bitcoin collector (CoinGecko with Binance fallback)."""
+
+from datetime import datetime, timezone
 
 import requests
-from typing import Optional, Dict
 
-from .base import CryptoData
-from ..utils.arabic_date import format_arabic_timestamp
+from .base import CryptoData, CollectorError
 from ..config import settings
 
 
@@ -14,81 +14,38 @@ class CryptoCollector:
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
 
-    def fetch(self, fallback_history: Optional[Dict] = None) -> CryptoData:
-        """Fetches live Bitcoin price and 24h change from CoinGecko, with Binance fallback."""
-        # 1. Primary: CoinGecko
-        cg_data = self._fetch_coingecko()
-        if cg_data:
-            return cg_data
+    def fetch(self) -> CryptoData:
+        """Fetches the live Bitcoin price from CoinGecko, falling back to Binance."""
+        errors = []
+        for fetcher in (self._fetch_coingecko, self._fetch_binance):
+            try:
+                return fetcher()
+            except Exception as e:
+                errors.append(str(e))
+                print(f"[CryptoCollector] {e}")
+        raise CollectorError("Bitcoin: all sources failed: " + " | ".join(errors))
 
-        # 2. Secondary Fallback: Binance public ticker
-        binance_data = self._fetch_binance()
-        if binance_data:
-            return binance_data
+    def _fetch_coingecko(self) -> CryptoData:
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_last_updated_at=true"
+        headers = {}
+        if settings.COINGECKO_API_KEY:
+            headers["x-cg-demo-api-key"] = settings.COINGECKO_API_KEY
 
-        # 3. Tertiary: History fallback
-        if fallback_history and "bitcoin" in fallback_history:
-            b = fallback_history["bitcoin"]
-            price = float(b.get("price", 82933.6))
-            return CryptoData(
-                name="Bitcoin",
-                price=price,
-                change_percent=0.0,
-                is_positive=True,
-                source="CoinGecko (آخر قيمة مسجلة)",
-                updated_at=format_arabic_timestamp()
-            )
-
-        # Baseline default
+        r = requests.get(url, headers=headers, timeout=self.timeout)
+        r.raise_for_status()
+        data = r.json()["bitcoin"]
         return CryptoData(
-            name="Bitcoin",
-            price=82933.6,
-            change_percent=-0.69,
-            is_positive=False,
+            price=float(data["usd"]),
             source="CoinGecko",
-            updated_at=format_arabic_timestamp()
+            updated_at=datetime.fromtimestamp(data["last_updated_at"], tz=timezone.utc),
         )
 
-    def _fetch_coingecko(self) -> Optional[CryptoData]:
-        try:
-            url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true"
-            headers = {}
-            if settings.COINGECKO_API_KEY:
-                headers["x-cg-demo-api-key"] = settings.COINGECKO_API_KEY
-
-            r = requests.get(url, headers=headers, timeout=self.timeout)
-            if r.status_code == 200:
-                data = r.json().get("bitcoin", {})
-                price = round(float(data.get("usd", 0)), 1)
-                change = round(float(data.get("usd_24h_change", 0)), 2)
-                return CryptoData(
-                    name="Bitcoin",
-                    price=price,
-                    change_percent=change,
-                    is_positive=change >= 0,
-                    source="CoinGecko",
-                    updated_at=format_arabic_timestamp()
-                )
-        except Exception as e:
-            print(f"[CryptoCollector] CoinGecko error: {e}")
-        return None
-
-    def _fetch_binance(self) -> Optional[CryptoData]:
-        try:
-            url = "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"
-            r = requests.get(url, timeout=self.timeout)
-            if r.status_code == 200:
-                data = r.json()
-                price = round(float(data.get("lastPrice", 0)), 1)
-                change = round(float(data.get("priceChangePercent", 0)), 2)
-                return CryptoData(
-                    name="Bitcoin",
-                    price=price,
-                    change_percent=change,
-                    is_positive=change >= 0,
-                    source="Binance",
-                    updated_at=format_arabic_timestamp()
-                )
-        except Exception as e:
-            print(f"[CryptoCollector] Binance error: {e}")
-        return None
+    def _fetch_binance(self) -> CryptoData:
+        r = requests.get("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT", timeout=self.timeout)
+        r.raise_for_status()
+        data = r.json()
+        return CryptoData(
+            price=float(data["lastPrice"]),
+            source="Binance",
+            updated_at=datetime.fromtimestamp(data["closeTime"] / 1000, tz=timezone.utc),
+        )

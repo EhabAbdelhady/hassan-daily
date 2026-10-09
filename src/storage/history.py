@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
 from ..config import settings
+from ..utils.arabic_date import get_cairo_now
 
 
 class HistoryStorage:
@@ -32,6 +33,12 @@ class HistoryStorage:
             return records[-1]
         return None
 
+    def get_previous_day_record(self, today: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Returns the latest record from a date before today (Cairo date), i.e. 'yesterday'."""
+        today = today or get_cairo_now().strftime("%Y-%m-%d")
+        earlier = [r for r in self.load_history().get("records", []) if r.get("date", "") < today]
+        return earlier[-1] if earlier else None
+
     def calculate_delta(self, current_price: float, previous_price: Optional[float]) -> Tuple[float, float, str, bool]:
         """Calculates percentage change and returns (pct, nominal_diff, formatted_string, is_positive)."""
         if not previous_price or previous_price <= 0:
@@ -55,13 +62,14 @@ class HistoryStorage:
         btc_price: float,
         brent_price: float
     ) -> Dict[str, Any]:
-        """Appends a new day's record to the history file."""
+        """Saves today's record (Cairo date), replacing any earlier record from the same day."""
         data = self.load_history()
-        records = data.setdefault("records", [])
+        today = get_cairo_now().strftime("%Y-%m-%d")
+        records = [r for r in data.get("records", []) if r.get("date") != today]
 
         new_record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "date": today,
             "gold": {
                 "24k": gold_24k,
                 "21k": gold_21k,

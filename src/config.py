@@ -27,15 +27,14 @@ class Settings:
     CUTOFF_HOURS: float = float(os.getenv("CUTOFF_HOURS", "2.0"))
 
     # AI Configuration
-    AI_PROVIDER: Literal["gemini", "openai", "anthropic"] = os.getenv("AI_PROVIDER", "gemini").lower() # type: ignore
+    AI_PROVIDER: Literal["gemini", "openai", "anthropic"] = os.getenv("AI_PROVIDER", "anthropic").lower() # type: ignore
+    AI_MODEL: str = os.getenv("AI_MODEL", "")  # Optional override of the provider's default model
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
     # Market Data
     COINGECKO_API_KEY: str = os.getenv("COINGECKO_API_KEY", "")
-    GOLD_API_KEY: str = os.getenv("GOLD_API_KEY", "")
-    ALPHAVANTAGE_API_KEY: str = os.getenv("ALPHAVANTAGE_API_KEY", "")
 
     # Email
     EMAIL_SERVICE: Literal["gmail", "resend"] = os.getenv("EMAIL_SERVICE", "gmail").lower() # type: ignore

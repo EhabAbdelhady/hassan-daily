@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Hassan Daily Infographic</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ==================== HEADER SECTION ==================== -->
+  <div class="header-container">
+    <div class="header-overlay"></div>
+
+    <!-- Slogan Top Right -->
+    <div class="header-slogan">
+      <span>INVEST</span>
+      <span>LEARN</span>
+      <span>IMPROVE</span>
+      <span>EVERYDAY</span>
+    </div>
+
+    <!-- Profile Cutout -->
+    <div class="header-profile"></div>
+
+    <!-- Main Branding -->
+    <div class="header-branding">
+      <div class="brand-title-wrap">
+        <h1 class="brand-title">HASSAN DAILY</h1>
+      </div>
+      <div class="date-badge">
+        {{ date_arabic }}
+      </div>
+      <div class="header-tagline">
+        مؤشرات اليوم .. نظرة أعمق لقرارات أفضل
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 4 PRICE CARDS ==================== -->
+  <!-- Set to LTR so visual order matches: [Gold, BTC, USD, Brent] -->
+  <div class="cards-container" style="direction: ltr;">
+    
+    <!-- CARD 1: Gold in Egypt -->
+    <div class="price-card" style="direction: rtl;">
+      <div class="card-header">
+        <img class="card-header-icon" src="../assets/gold_bars.png" alt="Gold">
+        <span class="card-header-title">الذهب في مصر</span>
+      </div>
+      <div class="card-body">
+        <div class="gold-row">
+          <span class="gold-karat">24 عيار</span>
+          <div>
+            <span class="gold-price">{{ gold.price_24k }}</span>
+            <span class="gold-unit">ج.م</span>
+          </div>
+        </div>
+        <div class="gold-row">
+          <span class="gold-karat">21 عيار</span>
+          <div>
+            <span class="gold-price">{{ gold.price_21k }}</span>
+            <span class="gold-unit">ج.م</span>
+          </div>
+        </div>
+        <div class="gold-row">
+          <span class="gold-karat">18 عيار</span>
+          <div>
+            <span class="gold-price">{{ gold.price_18k }}</span>
+            <span class="gold-unit">ج.م</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div>المصدر: <span class="card-footer-source">{{ gold.source }}</span></div>
+        <div>{{ gold.updated_at }}</div>
+      </div>
+    </div>
+
+    <!-- CARD 2: Bitcoin -->
+    <div class="price-card" style="direction: rtl;">
+      <div class="card-header">
+        <img class="card-header-icon" src="../assets/bitcoin_logo.png" alt="Bitcoin">
+        <span class="card-header-title">Bitcoin</span>
+      </div>
+      <div class="card-body">
+        <div class="hero-price">{{ crypto.price }}</div>
+        <div class="hero-unit">دولار</div>
+        <div class="change-pill {% if crypto.is_positive %}up{% else %}down{% endif %}" style="direction: ltr;">
+          {% if crypto.is_positive %}
+            <span style="font-size: 13px;">▲</span>
+            <span>{{ crypto.change_percent }}</span>
+          {% else %}
+            <span style="font-size: 13px;">▼</span>
+            <span>{{ crypto.change_percent }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer">
+        <div>المصدر: <span class="card-footer-source">{{ crypto.source }}</span></div>
+        <div>{{ crypto.updated_at }}</div>
+      </div>
+    </div>
+
+    <!-- CARD 3: USD / EGP -->
+    <div class="price-card" style="direction: rtl;">
+      <div class="card-header">
+        <img class="card-header-icon" src="../assets/dollar_bills.png" alt="USD/EGP">
+        <span class="card-header-title">الدولار مقابل الجنيه</span>
+      </div>
+      <div class="card-body" style="padding: 4px 10px;">
+        <div class="fx-vertical-wrap">
+          <div class="fx-v-item">
+            <span class="fx-price">{{ fx.buy }}</span>
+            <span class="fx-label">شراء</span>
+          </div>
+          <div class="fx-v-item">
+            <span class="fx-price">{{ fx.sell }}</span>
+            <span class="fx-label">بيع</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div>المصدر: <span class="card-footer-source">{{ fx.source }}</span></div>
+        {% if fx.note %}<div>{{ fx.note }}</div>{% endif %}
+        <div>{{ fx.updated_at }}</div>
+      </div>
+    </div>
+
+    <!-- CARD 4: Brent -->
+    <div class="price-card" style="direction: rtl;">
+      <div class="card-header">
+        <img class="card-header-icon" src="../assets/oil_barrel.png" alt="Brent">
+        <span class="card-header-title">Brent</span>
+      </div>
+      <div class="card-body">
+        <div class="hero-price">{{ oil.price }}</div>
+        <div class="hero-unit">دولار / برميل</div>
+        <div class="change-pill {% if oil.is_positive %}up{% else %}down{% endif %}" style="direction: ltr;">
+          {% if oil.is_positive %}
+            <span style="font-size: 13px;">▲</span>
+            <span>{{ oil.change_percent }}</span>
+          {% else %}
+            <span style="font-size: 13px;">▼</span>
+            <span>{{ oil.change_percent }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer">
+        <div>المصدر: <span class="card-footer-source">{{ oil.source }}</span></div>
+        <div>{{ oil.updated_at }}</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== ANALYSIS (TWO COLUMNS) ==================== -->
+  <div class="analysis-container">
+    
+    <!-- RIGHT COLUMN (RTL): Risks -->
+    <div class="analysis-column">
+      <div class="column-badge risks">
+        <img class="column-badge-icon" src="../assets/icons/warning.svg" alt="Risks">
+        <h2 class="column-badge-title">أهم المخاطر وتأثيرها على العقار</h2>
+      </div>
+      {% for item in risks %}
+      <div class="bullet-item">
+        <div class="bullet-dot"></div>
+        <div class="bullet-content">
+          {{ item.text }}
+          <span class="bullet-source">{{ item.source }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- LEFT COLUMN (RTL): Opportunities -->
+    <div class="analysis-column">
+      <div class="column-badge opportunities">
+        <img class="column-badge-icon" src="../assets/icons/opportunity.svg" alt="Opportunities">
+        <h2 class="column-badge-title">أهم الفرص والأخبار المؤثرة على العقار</h2>
+      </div>
+      {% for item in opportunities %}
+      <div class="bullet-item">
+        <div class="bullet-dot"></div>
+        <div class="bullet-content">
+          {{ item.text }}
+          <span class="bullet-source">{{ item.source }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- ==================== DAILY TIPS ==================== -->
+  <div class="tips-container">
+    
+    <!-- Right Box: Investment Tip -->
+    <div class="tip-box">
+      <div class="tip-header">
+        <img class="tip-icon" src="../assets/icons/bulb.svg" alt="Investment Tip">
+        <h3 class="tip-title">نصيحة استثمارية اليوم</h3>
+      </div>
+      <div class="tip-body">
+        {{ tip_investment }}
+      </div>
+    </div>
+
+    <!-- Left Box: Real Estate Tip -->
+    <div class="tip-box">
+      <div class="tip-header">
+        <img class="tip-icon" src="../assets/icons/house.svg" alt="Real Estate Tip">
+        <h3 class="tip-title">نصيحة عقارية اليوم</h3>
+      </div>
+      <div class="tip-body">
+        {{ tip_real_estate }}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== FOOTER BAR ==================== -->
+  <!-- Set to LTR so Quotes are Left, Brand Center, Tagline Right -->
+  <div class="footer-bar" style="direction: ltr;">
+    <img class="footer-quote" src="../assets/icons/quote.svg" alt="Quote">
+    <div class="footer-brand">
+      <div class="footer-line"></div>
+      <span class="footer-brand-text">HASSAN DAILY</span>
+      <div class="footer-line"></div>
+    </div>
+    <div class="footer-tagline">
+      قرارات أفضل .. لحياة أفضل
+    </div>
+  </div>
+
+</body>
+</html>

@@ -9,16 +9,23 @@ Started in Google Antigravity (phases 1–3), continued in Claude Code. The orig
 2. Data collectors + `data/history.json` for day-over-day change (done, fixed)
 3. AI text: configurable provider (gemini in use, default anthropic / openai) (done, fixed)
 4. Email preview + safety checks (missing/stale/abnormal-jump prices, verify rendered numbers) (done)
-5. Posting: Meta Graph API (FB Page + IG Business), image hosted on Cloudinary, token check, DRY_RUN, REQUIRE_APPROVAL
+5. Posting: Meta Graph API (FB Page + IG Business), image hosted on Cloudinary, token check, DRY_RUN, REQUIRE_APPROVAL (done; FB verified public on test Page FAIR DEAL STORE with app in development mode; IG code untested, POST_TO_INSTAGRAM=false)
 6. GitHub Actions: daily cron (Cairo time), keep-alive, `production` environment approval, approval cutoff (CUTOFF_HOURS)
 
 ## Layout
 ```
-main.py                  # CLI wrapper around src/pipeline.py (--no-history, --no-email)
+main.py                  # CLI: [all|prepare|publish] --dry-run --no-history --no-email
+scripts/meta_page_token.py  # Graph API Explorer user token → long-lived Page token written into .env
 src/
   config.py              # Settings from env / .env (python-dotenv); paths
-  pipeline.py            # fetch → market checks → AI → render → image checks → save history → email.
+  pipeline.py            # prepare: fetch → market checks → AI → render → image checks → token check → history
+                         #          → output/bundle.json + preview email
+                         # publish: cutoff (CUTOFF_HOURS since prepared_at) → sha check → token → Cloudinary → post
                          # Any failure raises RunStopped → alert email; nothing is published
+  publish/
+    hosting.py           # Cloudinary upload (public_id = date), verifies the URL is publicly fetchable
+    meta.py              # debug_token check, POST /{page}/photos (caption=), IG container → media_publish
+    posts_log.py         # data/posts.json: one post per platform per date; 'uncertain' (no response) is never retried
   safety/
     market_checks.py     # missing / stale (CBE in Sun–Thu working days) / jump vs yesterday / scraper sanity
     render_checks.py     # [data-verify] elements: page text, visibility, then RapidOCR on PNG crops
@@ -50,6 +57,7 @@ output/                  # Generated PNG + caption.txt (ignored)
 - Daily change compares with the latest history record from an earlier Cairo date. History only saves complete data.
 - Every number on the image has a `data-verify` attribute and is checked by text and by OCR. New numbers on the template need one.
 - Gemini: rules go in the prompt, not system_instruction, and the schema goes in response_json_schema (the other forms get 503 on the free tier). Busy → retry, then gemini-3.5-flash-lite.
+- Posting requests are never retried automatically (duplicate risk). Every platform posts at most once per Cairo date.
 - The layout is a flex column. The analysis section absorbs leftover height, so longer AI text shrinks the whitespace, not the cards.
 
 ## Running

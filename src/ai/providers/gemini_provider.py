@@ -7,7 +7,7 @@ from google.genai import types
 
 from ..base import BaseAIProvider, AIContentResponse
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 
 class GeminiProvider(BaseAIProvider):

@@ -7,7 +7,7 @@ Started in Google Antigravity (phases 1–3), continued in Claude Code. The orig
 ## Phases
 1. Template: HTML/CSS → PNG via Playwright (done, fixed in Claude Code)
 2. Data collectors + `data/history.json` for day-over-day change (done, fixed)
-3. AI text: configurable provider (anthropic default / openai / gemini) (done, fixed)
+3. AI text: configurable provider (gemini in use, default anthropic / openai) (done, fixed)
 4. Email preview + safety checks (missing/stale/abnormal-jump prices, verify rendered numbers)
 5. Posting: Meta Graph API (FB Page + IG Business), image hosted on Cloudinary, token check, DRY_RUN, REQUIRE_APPROVAL
 6. GitHub Actions: daily cron (Cairo time), keep-alive, `production` environment approval, approval cutoff (CUTOFF_HOURS)

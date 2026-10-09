@@ -1,36 +1,28 @@
-"""AI Provider Factory to easily switch between Gemini, OpenAI, and Anthropic."""
+"""AI Provider Factory to switch between Gemini, OpenAI, and Anthropic."""
 
 from typing import Optional
+
 from .base import BaseAIProvider
-from .providers.gemini_provider import GeminiProvider
-from .providers.openai_provider import OpenAIProvider
-from .providers.anthropic_provider import AnthropicProvider
-from .providers.fallback_provider import FallbackAnalyticalProvider
 from ..config import settings
 
 
 def get_ai_provider(provider_name: Optional[str] = None) -> BaseAIProvider:
-    """Instantiates and returns the configured AI provider."""
+    """Returns the configured AI provider. Raises if its API key is missing (no canned fallback text)."""
     name = (provider_name or settings.AI_PROVIDER).lower().strip()
+    model = settings.AI_MODEL or None
 
-    if name == "gemini":
-        if settings.GEMINI_API_KEY:
-            return GeminiProvider(api_key=settings.GEMINI_API_KEY)
-        print("[AI Factory] Notice: GEMINI_API_KEY not set in .env. Using analytical grounded generator.")
-        return FallbackAnalyticalProvider()
-
+    if name == "anthropic":
+        from .providers.anthropic_provider import AnthropicProvider
+        key, provider_cls = settings.ANTHROPIC_API_KEY, AnthropicProvider
     elif name == "openai":
-        if settings.OPENAI_API_KEY:
-            return OpenAIProvider(api_key=settings.OPENAI_API_KEY)
-        print("[AI Factory] Notice: OPENAI_API_KEY not set in .env. Using analytical grounded generator.")
-        return FallbackAnalyticalProvider()
-
-    elif name == "anthropic":
-        if settings.ANTHROPIC_API_KEY:
-            return AnthropicProvider(api_key=settings.ANTHROPIC_API_KEY)
-        print("[AI Factory] Notice: ANTHROPIC_API_KEY not set in .env. Using analytical grounded generator.")
-        return FallbackAnalyticalProvider()
-
+        from .providers.openai_provider import OpenAIProvider
+        key, provider_cls = settings.OPENAI_API_KEY, OpenAIProvider
+    elif name == "gemini":
+        from .providers.gemini_provider import GeminiProvider
+        key, provider_cls = settings.GEMINI_API_KEY, GeminiProvider
     else:
-        print(f"[AI Factory] Unknown provider '{name}'. Defaulting to analytical generator.")
-        return FallbackAnalyticalProvider()
+        raise ValueError(f"Unknown AI_PROVIDER '{name}'. Use anthropic, openai, or gemini.")
+
+    if not key:
+        raise ValueError(f"AI_PROVIDER is '{name}' but its API key is not set.")
+    return provider_cls(api_key=key, model=model)

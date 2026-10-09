@@ -10,12 +10,16 @@ Started in Google Antigravity (phases 1–3), continued in Claude Code. The orig
 3. AI text: configurable provider (gemini in use, default anthropic / openai) (done, fixed)
 4. Email preview + safety checks (missing/stale/abnormal-jump prices, verify rendered numbers) (done)
 5. Posting: Meta Graph API (FB Page + IG Business), image hosted on Cloudinary, token check, DRY_RUN, REQUIRE_APPROVAL (done; FB verified public on test Page FAIR DEAL STORE with app in development mode; IG code untested, POST_TO_INSTAGRAM=false)
-6. GitHub Actions: daily cron (Cairo time), keep-alive, `production` environment approval, approval cutoff (CUTOFF_HOURS)
+6. GitHub Actions: daily cron (Cairo time), keep-alive, `production` environment approval, approval cutoff (CUTOFF_HOURS) (done; repo EhabAbdelhady/hassan-daily, public; dry-run with approval verified 2026-10-09)
 
 ## Layout
 ```
 main.py                  # CLI: [all|prepare|publish] --dry-run --no-history --no-email
 scripts/meta_page_token.py  # Graph API Explorer user token → long-lived Page token written into .env
+scripts/github_setup.py     # push + .env keys → encrypted GitHub Secrets + Variables + 'production' environment
+.github/workflows/daily.yml # crons 09:00 & 10:00 UTC, gate keeps the one at 12:xx Cairo; prepare → artifact →
+                            # publish (environment 'production' unless REQUIRE_APPROVAL=false); keepalive job
+README.md                   # Non-developer guide; keep it in sync with settings/secrets
 src/
   config.py              # Settings from env / .env (python-dotenv); paths
   pipeline.py            # prepare: fetch → market checks → AI → render → image checks → token check → history
@@ -68,6 +72,11 @@ cp .env.example .env            # fill in keys; never commit .env
 .venv/bin/python -m pytest -q
 .venv/bin/python main.py --no-history   # full run without writing data/history.json
 ```
+
+## GitHub
+- The workflow commits data/history.json and data/posts.json to main daily: always `git pull --rebase` before committing locally.
+- No `gh` CLI on this Mac. Push with the token in .env via `git -c http.extraHeader=...` (see scripts/github_setup.py); never store it in git config.
+- Settings in CI come from repository Variables; keys from Secrets. Re-run scripts/github_setup.py after changing keys in .env.
 
 ## Conventions
 - All user-facing text is Arabic.

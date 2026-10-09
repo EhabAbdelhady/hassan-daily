@@ -28,8 +28,13 @@ src/
                          # Any failure raises RunStopped → alert email; nothing is published
   publish/
     hosting.py           # Cloudinary upload (public_id = date), verifies the URL is publicly fetchable
-    meta.py              # debug_token check, POST /{page}/photos (caption=), IG container → media_publish
-    posts_log.py         # data/posts.json: one post per platform per date; 'uncertain' (no response) is never retried
+    meta.py              # debug_token check, POST /{page}/photos (caption=), FB story = unpublished photo →
+                         # /{page}/photo_stories, IG container (media_type=STORIES for stories) → media_publish.
+                         # Instagram only accepts JPEG: hosting.as_jpeg() swaps the Cloudinary extension
+  (story)                # templates/story.html: 1080x1920 frame, feed PNG pasted unscaled at y=285;
+                         # check_story() requires a pixel match, so the number checks carry over
+    posts_log.py         # data/posts.json: one post per platform per date (facebook, facebook_story, instagram,
+                         # instagram_story); 'uncertain' (no response) is never retried
   safety/
     market_checks.py     # missing / stale (CBE in Sun–Thu working days) / jump vs yesterday / scraper sanity
     render_checks.py     # [data-verify] elements: page text, visibility, then RapidOCR on PNG crops

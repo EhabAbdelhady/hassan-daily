@@ -36,6 +36,11 @@ def upload_image(png: Path, public_id: str) -> str:
     return url
 
 
+def as_jpeg(url: str) -> str:
+    """Cloudinary converts on delivery when the extension changes. Instagram only accepts JPEG."""
+    return url.rsplit(".", 1)[0] + ".jpg"
+
+
 def delete_image(public_id: str) -> None:
     _configure()
     cloudinary.uploader.destroy(f"{FOLDER}/{public_id}", invalidate=True)

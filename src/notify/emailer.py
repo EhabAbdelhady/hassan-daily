@@ -100,7 +100,8 @@ def _warning_box(warnings: List[str]) -> str:
     return f"<div style='background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;margin:0 0 14px'><b>Needs attention:</b><ul>{items}</ul></div>"
 
 
-def send_preview(png: Path, caption: str, data: Dict[str, Any], status: str, warnings: Optional[List[str]] = None) -> None:
+def send_preview(png: Path, caption: str, data: Dict[str, Any], status: str, warnings: Optional[List[str]] = None,
+                 story: Optional[Path] = None) -> None:
     """Emails the finished image, the caption, and the numbers it was built from."""
     body = f"""
 <div style="font-family:Arial,sans-serif;max-width:720px">
@@ -108,13 +109,14 @@ def send_preview(png: Path, caption: str, data: Dict[str, Any], status: str, war
   <p style="margin:0 0 14px;color:#334155"><b>{html.escape(status)}</b></p>
   {_warning_box(warnings or [])}
   <img src="cid:preview" width="540" style="border:1px solid #e2e8f0;max-width:100%">
+  {"<p style='color:#64748b'>The story version (1080×1920) is attached.</p>" if story else ""}
   <h3>Caption</h3>
   <div dir="rtl" style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:12px;font-size:15px;line-height:1.6">{html.escape(caption)}</div>
   <h3>Numbers used</h3>
   {_price_rows(data)}
   <p style="color:#64748b;font-size:12px">All safety checks passed: prices present, recent, no abnormal jumps, and the image shows exactly these numbers.</p>
 </div>"""
-    _send(f"✅ HASSAN DAILY preview – {data['date']}", body, image=png)
+    _send(f"✅ HASSAN DAILY preview – {data['date']}", body, image=png, attachments=[story] if story else None)
 
 
 def send_alert(reason: str, problems: List[str], data: Optional[Dict[str, Any]] = None,

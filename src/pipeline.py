@@ -20,10 +20,10 @@ from .collectors.aggregator import MarketDataAggregator
 from .config import settings
 from .notify import send_preview, send_alert, send_published
 from .publish import posts_log
-from .publish.hosting import upload_image
-from .publish.meta import MetaError, check_token, post_facebook, post_instagram, post_link
-from .render.renderer import InfographicRenderer
-from .safety import check_market_data, check_render
+from .publish.hosting import as_jpeg, upload_image
+from .publish.meta import MetaError, check_token, post_facebook, post_facebook_story, post_instagram, post_link
+from .render.renderer import STORY_CARD_TOP, InfographicRenderer
+from .safety import check_market_data, check_render, check_story
 from .utils.arabic_date import CAIRO_TZ, get_cairo_now
 
 
@@ -36,8 +36,21 @@ class RunStopped(Exception):
         self.reason, self.problems, self.data, self.png = reason, problems, data, png
 
 
+LABELS = {"facebook": "Facebook post", "facebook_story": "Facebook story",
+          "instagram": "Instagram post", "instagram_story": "Instagram story"}
+
+
 def _platforms() -> List[str]:
-    return [p for p, on in (("facebook", settings.POST_TO_FACEBOOK), ("instagram", settings.POST_TO_INSTAGRAM)) if on]
+    return [p for p, on in (
+        ("facebook", settings.POST_TO_FACEBOOK),
+        ("facebook_story", settings.POST_TO_FACEBOOK_STORY),
+        ("instagram", settings.POST_TO_INSTAGRAM),
+        ("instagram_story", settings.POST_TO_INSTAGRAM_STORY),
+    ) if on]
+
+
+def _uses_story() -> bool:
+    return settings.POST_TO_FACEBOOK_STORY or settings.POST_TO_INSTAGRAM_STORY
 
 
 def _sha256(path: Path) -> str:
@@ -75,6 +88,15 @@ def prepare(save_history: bool, email: bool) -> None:
         raise RunStopped("the image doesn't show the fetched numbers correctly", problems, data, png)
     print("[Checks] Image verified: every number matches the fetched data")
 
+    story = None
+    if _uses_story():
+        renderer = InfographicRenderer()
+        story = renderer.render_story(png, data["date_arabic"])
+        problems = check_story(story, png, STORY_CARD_TOP)
+        if problems:
+            raise RunStopped("the story image doesn't match the verified infographic", problems, data, png)
+        print("[Checks] Story verified: contains the checked infographic unchanged")
+
     warnings = []
     if _platforms():
         token = check_token()
@@ -93,11 +115,13 @@ def prepare(save_history: bool, email: bool) -> None:
         "prepared_at": prepared_at.isoformat(),
         "png": png.name,  # relative: publish may run on another machine (GitHub job)
         "png_sha256": _sha256(png),
+        "story": story.name if story else None,
+        "story_sha256": _sha256(story) if story else None,
         "caption": content.caption,
         "data": data,
     }, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    targets = " and ".join(p.capitalize() for p in _platforms()) or "no platform (both are switched off)"
+    targets = ", ".join(LABELS[p] for p in _platforms()) or "nowhere (every platform is switched off)"
     if settings.DRY_RUN:
         status = f"DRY RUN: nothing will be posted. With DRY_RUN=false this would go to {targets}."
     elif settings.REQUIRE_APPROVAL:
@@ -108,7 +132,7 @@ def prepare(save_history: bool, email: bool) -> None:
         status = f"Approval is off: posting to {targets} now. You'll get a second email with the links."
 
     if email:
-        send_preview(png, content.caption, data, status=status, warnings=warnings)
+        send_preview(png, content.caption, data, status=status, warnings=warnings, story=story)
         print(f"[Email] Preview sent to {settings.ALERT_RECIPIENT_EMAIL}")
     print(f"\n[Prepared] {status}\n[Prepared] Image: {png}\n[Prepared] Caption: {caption_path}")
 
@@ -136,8 +160,16 @@ def publish(email: bool) -> None:
 
     if not png.exists() or _sha256(png) != bundle["png_sha256"]:
         raise RunStopped("the prepared image is missing or was changed after it was checked", [str(png)], data)
+    story = settings.OUTPUT_DIR / bundle["story"] if bundle.get("story") else None
+    if story and (not story.exists() or _sha256(story) != bundle["story_sha256"]):
+        raise RunStopped("the prepared story image is missing or was changed after it was checked", [str(story)], data)
 
     pending = [p for p in _platforms() if not posts_log.get(date, p)]
+    if not story:
+        missing = [p for p in pending if p.endswith("_story")]
+        if missing:
+            raise RunStopped("stories are switched on but no story image was prepared",
+                             ["Turn stories on before the prepare step runs, or wait for tomorrow."], data, png)
     already = [p for p in _platforms() if p not in pending]
     for p in already:
         entry = posts_log.get(date, p)
@@ -158,13 +190,19 @@ def publish(email: bool) -> None:
         raise RunStopped("the Meta token needs attention, so nothing was posted", token["errors"], data, png)
 
     image_url = upload_image(png, public_id=date)
+    story_url = upload_image(story, public_id=f"{date}-story") if any(p.endswith("_story") for p in pending) else ""
     print("[Publish] Image uploaded to Cloudinary")
 
+    posters = {
+        "facebook": lambda: post_facebook(image_url, caption),
+        "facebook_story": lambda: post_facebook_story(as_jpeg(story_url)),
+        "instagram": lambda: post_instagram(as_jpeg(image_url), caption),
+        "instagram_story": lambda: post_instagram(as_jpeg(story_url), story=True),
+    }
     done, failed = [], []
     for platform in pending:
-        poster = post_facebook if platform == "facebook" else post_instagram
         try:
-            post_id = poster(image_url, caption)
+            post_id = posters[platform]()
         except MetaError as e:  # Meta answered with an error: the post was not created
             failed.append(f"{platform}: {e}")
             continue
@@ -174,7 +212,7 @@ def publish(email: bool) -> None:
                           "Check the page; it won't be retried today to avoid a duplicate.")
             continue
         posts_log.record(date, platform, "posted", post_id=post_id)
-        done.append(f"{platform.capitalize()}: {post_link(platform, post_id)}")
+        done.append(f"{LABELS[platform]}: {post_link(platform, post_id)}")
         print(f"[Publish] Posted to {platform}: {post_id}")
 
     if failed:

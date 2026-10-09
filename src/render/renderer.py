@@ -1,5 +1,6 @@
 """Playwright-based HTML-to-PNG renderer for the Hassan Daily Infographic."""
 
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from jinja2 import Environment, FileSystemLoader
@@ -83,6 +84,26 @@ class InfographicRenderer:
 
         return output_png_path, report
 
+    def render_story(self, feed_png: Path, date_arabic: str, output_filename: str = "daily_story.png") -> Path:
+        """Places the verified feed image, unscaled, in a 1080x1920 story frame (y=STORY_CARD_TOP)."""
+        template = self.jinja_env.get_template("story.html")
+        html_path = self.templates_dir / "rendered_story.html"
+        feed_image = os.path.relpath(feed_png.resolve(), self.templates_dir.resolve())
+        html_path.write_text(template.render(date_arabic=date_arabic, feed_image=feed_image), encoding="utf-8")
+        output_png_path = self.output_dir / output_filename
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"])
+            page = browser.new_page(viewport={"width": 1080, "height": 1920}, device_scale_factor=1)
+            page.goto(f"file://{html_path.resolve()}", wait_until="networkidle")
+            page.evaluate("document.fonts.ready")
+            page.wait_for_timeout(300)
+            page.screenshot(path=str(output_png_path), clip={"x": 0, "y": 0, "width": 1080, "height": 1920})
+            browser.close()
+        return output_png_path
+
+
+STORY_CARD_TOP = 285
 
 PAGE_REPORT_JS = """
 async () => {

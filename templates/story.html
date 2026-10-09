@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Hassan Daily Story</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 1080x1920 story frame; the verified 1080x1350 infographic is placed unscaled at y=285 */
+    body.story {
+      width: 1080px;
+      height: 1920px;
+      display: block;
+      background: linear-gradient(180deg, #0b0f19 0%, #121a2b 50%, #0b0f19 100%);
+    }
+    .story-top {
+      position: absolute;
+      top: 120px;
+      left: 0;
+      width: 1080px;
+      height: 150px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .story-brand {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      font-size: 54px;
+      letter-spacing: 2px;
+      color: #d4af37;
+      line-height: 1;
+    }
+    .story-date {
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 30px;
+      color: #f1f5f9;
+    }
+    .story-card {
+      position: absolute;
+      top: 285px;
+      left: 0;
+      width: 1080px;
+      height: 1350px;
+      border-top: 3px solid #d4af37;
+      border-bottom: 3px solid #d4af37;
+      box-sizing: content-box;
+      margin-top: -3px;
+    }
+    .story-bottom {
+      position: absolute;
+      top: 1660px;
+      left: 0;
+      width: 1080px;
+      text-align: center;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 34px;
+      color: #d4af37;
+    }
+  </style>
+</head>
+<body class="story">
+  <div class="story-top">
+    <div class="story-brand">HASSAN DAILY</div>
+    <div class="story-date">{{ date_arabic }}</div>
+  </div>
+  <img class="story-card" src="{{ feed_image }}" alt="">
+  <div class="story-bottom">التحليل الكامل في منشور اليوم</div>
+</body>
+</html>

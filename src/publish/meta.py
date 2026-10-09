@@ -59,7 +59,8 @@ def check_token() -> Dict[str, List[str]]:
         errors.append(f"The token belongs to Page {info.get('profile_id')}, but FACEBOOK_PAGE_ID is {settings.FACEBOOK_PAGE_ID}")
 
     scopes = set(info.get("scopes", []))
-    needed = REQUIRED_SCOPES | (INSTAGRAM_SCOPES if settings.POST_TO_INSTAGRAM else set())
+    uses_instagram = settings.POST_TO_INSTAGRAM or settings.POST_TO_INSTAGRAM_STORY
+    needed = REQUIRED_SCOPES | (INSTAGRAM_SCOPES if uses_instagram else set())
     if needed - scopes:
         errors.append(f"Token is missing permissions: {', '.join(sorted(needed - scopes))}")
 
@@ -84,12 +85,27 @@ def post_facebook(image_url: str, caption: str) -> str:
     return body.get("post_id") or body["id"]
 
 
-def post_instagram(image_url: str, caption: str) -> str:
-    """Publishes to the linked Instagram Professional account (create container → wait → publish)."""
+def post_facebook_story(image_url: str) -> str:
+    """Publishes a Page photo story: upload the photo unpublished, then publish it as a story."""
+    photo_id = _call("POST", f"{settings.FACEBOOK_PAGE_ID}/photos",
+                     url=image_url, published="false", access_token=settings.META_PAGE_ACCESS_TOKEN)["id"]
+    body = _call("POST", f"{settings.FACEBOOK_PAGE_ID}/photo_stories",
+                 photo_id=photo_id, access_token=settings.META_PAGE_ACCESS_TOKEN)
+    return body.get("post_id") or photo_id
+
+
+def post_instagram(image_url: str, caption: str = "", story: bool = False) -> str:
+    """Publishes to the linked Instagram Professional account (create container → wait → publish).
+    image_url must be a JPEG: Instagram rejects other formats."""
     ig, token = settings.INSTAGRAM_ACCOUNT_ID, settings.META_PAGE_ACCESS_TOKEN
     if not ig:
         raise MetaError("INSTAGRAM_ACCOUNT_ID is not set")
-    creation_id = _call("POST", f"{ig}/media", image_url=image_url, caption=caption, access_token=token)["id"]
+    params = {"image_url": image_url, "access_token": token}
+    if story:
+        params["media_type"] = "STORIES"
+    else:
+        params["caption"] = caption
+    creation_id = _call("POST", f"{ig}/media", **params)["id"]
 
     for _ in range(30):  # up to ~2.5 minutes for Instagram to fetch and process the image
         status = _call("GET", creation_id, fields="status_code", access_token=token).get("status_code")
@@ -107,4 +123,6 @@ def post_instagram(image_url: str, caption: str) -> str:
 def post_link(platform: str, post_id: str) -> str:
     if platform == "facebook":
         return f"https://www.facebook.com/{post_id}"
-    return "https://www.instagram.com/"  # the media id isn't the public shortcode; the profile shows the post
+    if platform == "facebook_story":
+        return f"https://www.facebook.com/stories/{settings.FACEBOOK_PAGE_ID}"
+    return "https://www.instagram.com/"  # the media id isn't the public shortcode; the profile shows it

@@ -11,7 +11,7 @@ Every day at **12:00 PM Cairo time** this project:
 3. Asks an AI (Google Gemini) to write the Arabic opportunities, risks, and tips, **using only those numbers**. It checks every number the AI wrote and rejects promises of returns.
 4. Builds the 1080×1350 Arabic image, then reads the image back to confirm every number on it is exactly right.
 5. Emails you a **preview** (image + caption + the numbers used).
-6. Waits for your **approval** on GitHub, then posts to your Facebook Page (and Instagram, when switched on).
+6. Waits for your **approval** on GitHub, then posts to your Facebook Page, and optionally to your Facebook story, Instagram, and Instagram story.
 
 If anything is wrong at any step, **nothing is posted** and you get an email explaining why.
 
@@ -24,6 +24,8 @@ If anything is wrong at any step, **nothing is posted** and you get an email exp
 3. To post it, open the link (or go to **github.com → your repository → Actions**, click today's run) and click **Review deployments → tick "production" → Approve and deploy**.
    To skip today, click **Reject** (or do nothing).
 4. A minute later you get **"📣 HASSAN DAILY posted"** with the link.
+
+Stories use a tall version of the same image (attached to the preview email): the infographic, unchanged, in a dark and gold frame. Stories disappear after 24 hours, as usual.
 
 You have **2 hours** after the preview to approve. A later approval posts nothing, and you get an email saying so, because prices may have moved.
 
@@ -42,6 +44,8 @@ Settings live on GitHub: **your repository → Settings → Secrets and variable
 | `CUTOFF_HOURS` | How long after the preview an approval still counts. | e.g. `2` |
 | `POST_TO_FACEBOOK` | Post to the Facebook Page. | `true` / `false` |
 | `POST_TO_INSTAGRAM` | Post to Instagram (needs the Instagram setup below). | `true` / `false` |
+| `POST_TO_FACEBOOK_STORY` | Also share the infographic as a Facebook Page story. | `true` / `false` |
+| `POST_TO_INSTAGRAM_STORY` | Also share it as an Instagram story (needs the Instagram setup). | `true` / `false` |
 | `AI_PROVIDER` | Which AI writes the text. | `gemini` / `anthropic` / `openai` |
 | `AI_MODEL` | Optional: a specific model. Leave empty for the default. | e.g. `gemini-3.8-flash` |
 | `EMAIL_SERVICE` | How emails are sent. | `gmail` / `resend` |
@@ -153,7 +157,7 @@ Instagram needs the image at a public web address; Cloudinary provides it.
 2. Link it to the Facebook Page: on the Page, **Settings → Linked accounts → Instagram → Connect**.
 3. In the Meta app dashboard: **Add use cases** → the Instagram use case for managing content, and add the permissions `instagram_basic` and `instagram_content_publish`.
 4. Generate a new token as in step 4 (add those two permissions too), run the Page token helper again (it now also saves `INSTAGRAM_ACCOUNT_ID`), then run the GitHub helper again.
-5. Set the GitHub variable `POST_TO_INSTAGRAM` to `true`.
+5. Set the GitHub variable `POST_TO_INSTAGRAM` (and `POST_TO_INSTAGRAM_STORY` for stories) to `true`.
 
 ---
 

@@ -59,6 +59,8 @@ class Settings:
     META_GRAPH_VERSION: str = os.getenv("META_GRAPH_VERSION", "v26.0")
     POST_TO_FACEBOOK: bool = os.getenv("POST_TO_FACEBOOK", "true").lower() in ("true", "1", "yes")
     POST_TO_INSTAGRAM: bool = os.getenv("POST_TO_INSTAGRAM", "false").lower() in ("true", "1", "yes")
+    POST_TO_FACEBOOK_STORY: bool = os.getenv("POST_TO_FACEBOOK_STORY", "false").lower() in ("true", "1", "yes")
+    POST_TO_INSTAGRAM_STORY: bool = os.getenv("POST_TO_INSTAGRAM_STORY", "false").lower() in ("true", "1", "yes")
 
     # Paths
     BASE_DIR: Path = BASE_DIR

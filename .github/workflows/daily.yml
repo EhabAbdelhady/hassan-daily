@@ -26,6 +26,8 @@ env:
   CUTOFF_HOURS: ${{ vars.CUTOFF_HOURS || '2' }}
   POST_TO_FACEBOOK: ${{ vars.POST_TO_FACEBOOK || 'true' }}
   POST_TO_INSTAGRAM: ${{ vars.POST_TO_INSTAGRAM || 'false' }}
+  POST_TO_FACEBOOK_STORY: ${{ vars.POST_TO_FACEBOOK_STORY || 'false' }}
+  POST_TO_INSTAGRAM_STORY: ${{ vars.POST_TO_INSTAGRAM_STORY || 'false' }}
   AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
   AI_MODEL: ${{ vars.AI_MODEL }}
   EMAIL_SERVICE: ${{ vars.EMAIL_SERVICE || 'gmail' }}
@@ -114,6 +116,7 @@ jobs:
           path: |
             output/bundle.json
             output/daily_infographic.png
+            output/daily_story.png
             output/caption.txt
           retention-days: 3
 

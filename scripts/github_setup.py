@@ -33,6 +33,8 @@ VARIABLES = {
     "CUTOFF_HOURS": "2",
     "POST_TO_FACEBOOK": "true",
     "POST_TO_INSTAGRAM": "false",
+    "POST_TO_FACEBOOK_STORY": "false",
+    "POST_TO_INSTAGRAM_STORY": "false",
     "EMAIL_SERVICE": "gmail",
 }
 VARIABLES_FROM_ENV = ["AI_PROVIDER", "AI_MODEL"]

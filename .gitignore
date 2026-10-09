@@ -11,7 +11,7 @@ __pycache__/
 
 # Generated
 output/
-templates/rendered_infographic.html
+templates/rendered_*.html
 
 # OS
 .DS_Store

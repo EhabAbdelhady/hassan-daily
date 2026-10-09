@@ -1,0 +1,165 @@
+name: Daily infographic
+
+on:
+  schedule:
+    # Target: 12:00 Cairo time. GitHub cron is UTC and Egypt switches between summer (UTC+3)
+    # and winter (UTC+2) time, so trigger at both UTC hours; the gate below keeps only the
+    # trigger that lands in the 12:00 hour in Cairo.
+    - cron: "0 9 * * *"   # 12:00 Cairo in summer time
+    - cron: "0 10 * * *"  # 12:00 Cairo in winter time
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: everything except uploading and posting"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commit data/history.json and data/posts.json back
+  actions: write    # keep-alive and cancelling stale approval requests
+
+env:
+  POST_HOUR_CAIRO: "12"
+  # Settings (Repository → Settings → Secrets and variables → Actions → Variables)
+  DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true') || vars.DRY_RUN || 'true' }}
+  REQUIRE_APPROVAL: ${{ vars.REQUIRE_APPROVAL || 'true' }}
+  CUTOFF_HOURS: ${{ vars.CUTOFF_HOURS || '2' }}
+  POST_TO_FACEBOOK: ${{ vars.POST_TO_FACEBOOK || 'true' }}
+  POST_TO_INSTAGRAM: ${{ vars.POST_TO_INSTAGRAM || 'false' }}
+  AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+  AI_MODEL: ${{ vars.AI_MODEL }}
+  EMAIL_SERVICE: ${{ vars.EMAIL_SERVICE || 'gmail' }}
+  # Keys (Repository → Settings → Secrets and variables → Actions → Secrets)
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+  GMAIL_USER: ${{ secrets.GMAIL_USER }}
+  GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+  ALERT_RECIPIENT_EMAIL: ${{ secrets.ALERT_RECIPIENT_EMAIL }}
+  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+  RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+  CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+  CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+  CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+  META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+  FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+  INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+  META_APP_ID: ${{ secrets.META_APP_ID }}
+  META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: prepare
+      cancel-in-progress: false
+    outputs:
+      ready: ${{ steps.prepare.outcome == 'success' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Check it's 12:00 in Cairo (scheduled runs only)
+        id: gate
+        run: |
+          hour=$(TZ=Africa/Cairo date +%H)
+          run=true
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$hour" != "$POST_HOUR_CAIRO" ]; then
+            echo "Cairo time is ${hour}:xx, not ${POST_HOUR_CAIRO}:xx. This is the other summer/winter trigger, skipping."
+            run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - name: Cancel yesterday's unanswered approval requests
+        if: steps.gate.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run list --repo "${{ github.repository }}" --workflow daily.yml --status waiting \
+            --json databaseId -q '.[].databaseId' | xargs -r -n1 gh run cancel --repo "${{ github.repository }}" || true
+
+      - uses: actions/setup-python@v7
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Prepare (fetch, check, write, render, verify, email preview)
+        id: prepare
+        if: steps.gate.outputs.run == 'true'
+        run: python main.py prepare
+
+      - name: Save price history
+        if: steps.prepare.outcome == 'success'
+        run: |
+          git config user.name "hassan-daily-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/history.json
+          git diff --cached --quiet || git commit -m "Price history $(TZ=Africa/Cairo date +%F)"
+          git pull --rebase && git push
+
+      - uses: actions/upload-artifact@v7
+        if: steps.prepare.outcome == 'success'
+        with:
+          name: prepared-post
+          path: |
+            output/bundle.json
+            output/daily_infographic.png
+            output/caption.txt
+          retention-days: 3
+
+  publish:
+    needs: prepare
+    if: needs.prepare.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # With REQUIRE_APPROVAL=true this waits for a reviewer's approval in the "production" environment
+    environment: ${{ vars.REQUIRE_APPROVAL == 'false' && 'no-approval' || 'production' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: prepared-post
+          path: output
+
+      - name: Publish (cutoff check, token check, upload, post)
+        run: python main.py publish
+
+      - name: Save posting log
+        if: always()
+        run: |
+          git config user.name "hassan-daily-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/posts.json 2>/dev/null || exit 0
+          git diff --cached --quiet || git commit -m "Posting log $(TZ=Africa/Cairo date +%F)"
+          git pull --rebase && git push
+
+  keepalive:
+    # GitHub pauses scheduled workflows after 60 days without repository activity.
+    # Re-enabling the workflow through the API resets that timer.
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/daily.yml/enable"

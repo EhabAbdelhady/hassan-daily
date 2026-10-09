@@ -6,6 +6,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  {% macro change_pill(change, small=false) %}
+    {% if change %}
+    <div class="change-pill {{ change.direction }}{% if small %} small{% endif %}" style="direction: ltr;">
+      {% if change.direction == 'up' %}<span style="font-size: 13px;">▲</span>{% elif change.direction == 'down' %}<span style="font-size: 13px;">▼</span>{% endif %}
+      <span>{{ change.text }}</span>
+      {% if small %}<span class="change-label">عن أمس</span>{% endif %}
+    </div>
+    {% endif %}
+  {% endmacro %}
   <!-- ==================== HEADER SECTION ==================== -->
   <div class="header-container">
     <div class="header-overlay"></div>
@@ -67,10 +76,11 @@
             <span class="gold-unit">ج.م</span>
           </div>
         </div>
+        {{ change_pill(gold.change, small=true) }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ gold.source }}</span></div>
-        <div>{{ gold.updated_at }}</div>
+        <div class="updated">{{ gold.updated_at }}</div>
       </div>
     </div>
 
@@ -83,19 +93,11 @@
       <div class="card-body">
         <div class="hero-price">{{ crypto.price }}</div>
         <div class="hero-unit">دولار</div>
-        <div class="change-pill {% if crypto.is_positive %}up{% else %}down{% endif %}" style="direction: ltr;">
-          {% if crypto.is_positive %}
-            <span style="font-size: 13px;">▲</span>
-            <span>{{ crypto.change_percent }}</span>
-          {% else %}
-            <span style="font-size: 13px;">▼</span>
-            <span>{{ crypto.change_percent }}</span>
-          {% endif %}
-        </div>
+        {{ change_pill(crypto.change) }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ crypto.source }}</span></div>
-        <div>{{ crypto.updated_at }}</div>
+        <div class="updated">{{ crypto.updated_at }}</div>
       </div>
     </div>
 
@@ -116,36 +118,29 @@
             <span class="fx-label">بيع</span>
           </div>
         </div>
+        {{ change_pill(fx.change, small=true) }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ fx.source }}</span></div>
-        {% if fx.note %}<div>{{ fx.note }}</div>{% endif %}
-        <div>{{ fx.updated_at }}</div>
+        <div>متوسط سعر السوق</div>
+        <div class="updated">{{ fx.updated_at }}</div>
       </div>
     </div>
 
     <!-- CARD 4: Brent -->
     <div class="price-card" style="direction: rtl;">
       <div class="card-header">
-        <img class="card-header-icon" src="../assets/oil_barrel.png" alt="Brent">
+        <img class="card-header-icon glow" src="../assets/oil_barrel.png" alt="Brent">
         <span class="card-header-title">Brent</span>
       </div>
       <div class="card-body">
         <div class="hero-price">{{ oil.price }}</div>
         <div class="hero-unit">دولار / برميل</div>
-        <div class="change-pill {% if oil.is_positive %}up{% else %}down{% endif %}" style="direction: ltr;">
-          {% if oil.is_positive %}
-            <span style="font-size: 13px;">▲</span>
-            <span>{{ oil.change_percent }}</span>
-          {% else %}
-            <span style="font-size: 13px;">▼</span>
-            <span>{{ oil.change_percent }}</span>
-          {% endif %}
-        </div>
+        {{ change_pill(oil.change) }}
       </div>
       <div class="card-footer">
         <div>المصدر: <span class="card-footer-source">{{ oil.source }}</span></div>
-        <div>{{ oil.updated_at }}</div>
+        <div class="updated">{{ oil.updated_at }}</div>
       </div>
     </div>
 
@@ -160,6 +155,7 @@
         <img class="column-badge-icon" src="../assets/icons/warning.svg" alt="Risks">
         <h2 class="column-badge-title">أهم المخاطر وتأثيرها على العقار</h2>
       </div>
+      <div class="bullets">
       {% for item in risks %}
       <div class="bullet-item">
         <div class="bullet-dot"></div>
@@ -169,6 +165,7 @@
         </div>
       </div>
       {% endfor %}
+      </div>
     </div>
 
     <!-- LEFT COLUMN (RTL): Opportunities -->
@@ -177,6 +174,7 @@
         <img class="column-badge-icon" src="../assets/icons/opportunity.svg" alt="Opportunities">
         <h2 class="column-badge-title">أهم الفرص والأخبار المؤثرة على العقار</h2>
       </div>
+      <div class="bullets">
       {% for item in opportunities %}
       <div class="bullet-item">
         <div class="bullet-dot"></div>
@@ -186,6 +184,7 @@
         </div>
       </div>
       {% endfor %}
+      </div>
     </div>
 
   </div>
@@ -216,6 +215,8 @@
     </div>
 
   </div>
+
+  <div class="disclaimer">{{ disclaimer }}</div>
 
   <!-- ==================== FOOTER BAR ==================== -->
   <!-- Set to LTR so Quotes are Left, Brand Center, Tagline Right -->

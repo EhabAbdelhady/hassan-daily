@@ -1,0 +1,80 @@
+import json
+from datetime import datetime, timedelta, timezone
+
+import pytest
+import requests
+
+import src.pipeline as pl
+from src.config import settings
+
+
+@pytest.fixture
+def env(tmp_path, monkeypatch, market_data):
+    """A prepared bundle in a temp folder, with Meta, Cloudinary and email faked out."""
+    monkeypatch.setattr(settings, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(settings, "BUNDLE_FILE", tmp_path / "bundle.json")
+    monkeypatch.setattr(settings, "POSTS_LOG_FILE", tmp_path / "posts.json")
+    monkeypatch.setattr(settings, "DRY_RUN", False)
+    monkeypatch.setattr(settings, "POST_TO_FACEBOOK", True)
+    monkeypatch.setattr(settings, "POST_TO_INSTAGRAM", False)
+    monkeypatch.setattr(settings, "CUTOFF_HOURS", 2.0)
+    png = tmp_path / "daily_infographic.png"
+    png.write_bytes(b"png-bytes")
+
+    def write_bundle(hours_ago=0.5):
+        settings.BUNDLE_FILE.write_text(json.dumps({
+            "date": pl.get_cairo_now().strftime("%Y-%m-%d"),
+            "prepared_at": (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).isoformat(),
+            "png": png.name, "png_sha256": pl._sha256(png), "caption": "caption", "data": market_data,
+        }))
+
+    calls = {"facebook": 0, "alerts": [], "published": []}
+
+    def fake_fb(url, caption):
+        calls["facebook"] += 1
+        return "123_456"
+
+    monkeypatch.setattr(pl, "check_token", lambda: {"errors": [], "warnings": []})
+    monkeypatch.setattr(pl, "upload_image", lambda png, public_id: "https://example.com/x.png")
+    monkeypatch.setattr(pl, "post_facebook", fake_fb)
+    monkeypatch.setattr(pl, "send_alert", lambda reason, *a: calls["alerts"].append(reason))
+    monkeypatch.setattr(pl, "send_published", lambda date, results, *a: calls["published"].append(results))
+    write_bundle()
+    return {"calls": calls, "write_bundle": write_bundle, "monkeypatch": monkeypatch}
+
+
+def test_posts_once_and_never_twice(env):
+    assert pl.run("publish") == 0
+    assert pl.run("publish") == 0  # second run: already posted today
+    assert env["calls"]["facebook"] == 1
+    assert len(env["calls"]["published"]) == 1
+
+
+def test_late_approval_posts_nothing(env):
+    env["write_bundle"](hours_ago=2.5)
+    assert pl.run("publish") == 1
+    assert env["calls"]["facebook"] == 0
+    assert "after the cutoff" in env["calls"]["alerts"][0]
+
+
+def test_no_response_is_never_retried(env):
+    def timeout(url, caption):
+        env["calls"]["facebook"] += 1
+        raise requests.Timeout("read timed out")
+    env["monkeypatch"].setattr(pl, "post_facebook", timeout)
+    assert pl.run("publish") == 1
+    assert pl.run("publish") == 0  # logged as 'uncertain' → skipped, no duplicate risk
+    assert env["calls"]["facebook"] == 1
+
+
+def test_dry_run_never_posts(env):
+    env["monkeypatch"].setattr(settings, "DRY_RUN", True)
+    assert pl.run("publish") == 0
+    assert env["calls"]["facebook"] == 0
+    assert "DRY RUN" in env["calls"]["published"][0][0]
+
+
+def test_changed_image_is_refused(env):
+    (settings.OUTPUT_DIR / "daily_infographic.png").write_bytes(b"tampered")
+    assert pl.run("publish") == 1
+    assert env["calls"]["facebook"] == 0

@@ -93,12 +93,20 @@ def _send(subject: str, body_html: str, image: Optional[Path] = None, attachment
         smtp.send_message(msg)
 
 
-def send_preview(png: Path, caption: str, data: Dict[str, Any], status: str) -> None:
+def _warning_box(warnings: List[str]) -> str:
+    if not warnings:
+        return ""
+    items = "".join(f"<li>{html.escape(w)}</li>" for w in warnings)
+    return f"<div style='background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;margin:0 0 14px'><b>Needs attention:</b><ul>{items}</ul></div>"
+
+
+def send_preview(png: Path, caption: str, data: Dict[str, Any], status: str, warnings: Optional[List[str]] = None) -> None:
     """Emails the finished image, the caption, and the numbers it was built from."""
     body = f"""
 <div style="font-family:Arial,sans-serif;max-width:720px">
   <h2 style="margin:0 0 6px">HASSAN DAILY – {data['date']}</h2>
-  <p style="margin:0 0 14px;color:#334155">{html.escape(status)}</p>
+  <p style="margin:0 0 14px;color:#334155"><b>{html.escape(status)}</b></p>
+  {_warning_box(warnings or [])}
   <img src="cid:preview" width="540" style="border:1px solid #e2e8f0;max-width:100%">
   <h3>Caption</h3>
   <div dir="rtl" style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:12px;font-size:15px;line-height:1.6">{html.escape(caption)}</div>
@@ -124,3 +132,17 @@ def send_alert(reason: str, problems: List[str], data: Optional[Dict[str, Any]] 
 </div>"""
     date = data["date"] if data else ""
     _send(f"⚠️ HASSAN DAILY: not posted {date} – {reason}", body, image=png)
+
+
+def send_published(date: str, results: List[str], warnings: List[str], data: Dict[str, Any]) -> None:
+    """Confirms what was posted (or, in a dry run, what would have been)."""
+    items = "".join(f"<li>{html.escape(r)}</li>" for r in results)
+    body = f"""
+<div style="font-family:Arial,sans-serif;max-width:720px">
+  <h2 style="color:#15803d;margin:0 0 6px">Posted – {date}</h2>
+  {_warning_box(warnings)}
+  <ul style="line-height:1.8">{items}</ul>
+  <h3>Numbers used</h3>
+  {_price_rows(data)}
+</div>"""
+    _send(f"📣 HASSAN DAILY posted – {date}", body)

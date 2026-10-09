@@ -10,7 +10,7 @@ from .prompts import build_prompts
 from ..utils.arabic_date import ARABIC_MONTHS
 
 DISCLAIMER = "تنويه: المحتوى للأغراض المعرفية فقط، ولا يُعد نصيحة استثمارية أو مالية."
-HASHTAGS = "#HassanDaily #اقتصاد #عقارات #الذهب #الدولار #الاستثمار #مصر #بيتكوين #برنت"
+HASHTAGS = "#HassanDaily #الذهب #الدولار #عقارات #مصر"  # 5: Instagram's current recommendation
 
 # Phrases that promise returns or certainty. Any match fails the check.
 BANNED_PHRASES = [

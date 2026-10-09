@@ -56,6 +56,9 @@ class Settings:
     INSTAGRAM_ACCOUNT_ID: str = os.getenv("INSTAGRAM_ACCOUNT_ID", "")
     META_APP_ID: str = os.getenv("META_APP_ID", "")
     META_APP_SECRET: str = os.getenv("META_APP_SECRET", "")
+    META_GRAPH_VERSION: str = os.getenv("META_GRAPH_VERSION", "v26.0")
+    POST_TO_FACEBOOK: bool = os.getenv("POST_TO_FACEBOOK", "true").lower() in ("true", "1", "yes")
+    POST_TO_INSTAGRAM: bool = os.getenv("POST_TO_INSTAGRAM", "false").lower() in ("true", "1", "yes")
 
     # Paths
     BASE_DIR: Path = BASE_DIR
@@ -64,6 +67,8 @@ class Settings:
     DATA_DIR: Path = DATA_DIR
     OUTPUT_DIR: Path = OUTPUT_DIR
     HISTORY_FILE: Path = DATA_DIR / "history.json"
+    POSTS_LOG_FILE: Path = DATA_DIR / "posts.json"
+    BUNDLE_FILE: Path = OUTPUT_DIR / "bundle.json"
 
 
 settings = Settings()

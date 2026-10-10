@@ -7,7 +7,7 @@ from ..utils.arabic_date import get_cairo_now
 
 # How old each source's own "last updated" time may be
 MAX_AGE = {
-    "gold": timedelta(hours=24),
+    "gold": timedelta(hours=36),  # iSagha sometimes skips updates for a day
     "crypto": timedelta(hours=1),
     "oil": timedelta(days=4),  # Brent doesn't trade at weekends
 }

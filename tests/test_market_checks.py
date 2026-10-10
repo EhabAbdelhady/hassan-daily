@@ -53,3 +53,11 @@ def test_missing_source_reported(market_data):
     d["oil"] = None
     d["errors"] = ["Brent (Yahoo Finance): request failed"]
     assert check_market_data(d, now=NOW) == ["Brent (Yahoo Finance): request failed"]
+
+
+def test_gold_allows_up_to_36_hours(market_data):
+    d = fresh(market_data)
+    d["gold"]["updated_at_iso"] = "2026-10-10T00:00:00+03:00"  # 33 hours before NOW
+    assert check_market_data(d, now=NOW) == []
+    d["gold"]["updated_at_iso"] = "2026-10-09T20:00:00+03:00"  # 37 hours before NOW
+    assert any("Gold" in p and "limit 36" in p for p in check_market_data(d, now=NOW))

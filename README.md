@@ -25,7 +25,7 @@ If anything is wrong at any step, **nothing is posted** and you get an email exp
    To skip today, click **Reject** (or do nothing).
 4. A minute later you get **"📣 HASSAN DAILY posted"** with the link.
 
-Stories use a tall version of the same image (attached to the preview email): the infographic, unchanged, in a dark and gold frame. Stories disappear after 24 hours, as usual.
+Stories use a separate tall design (attached to the preview email): the four prices in large type, with the same number checks as the main image. Stories disappear after 24 hours, as usual.
 
 You have **2 hours** after the preview to approve. A later approval posts nothing, and you get an email saying so, because prices may have moved.
 
@@ -177,7 +177,7 @@ The subject starts with **"⚠️ HASSAN DAILY: not posted"**. Nothing was poste
 | Reason in the email | What it means | What to do |
 |---|---|---|
 | *a price is missing* | A source website or API was down. | Usually temporary. Run it again later by hand (Actions → Run workflow). |
-| *last updated … ago* / *working days old* | A source hasn't updated (e.g. a holiday). | Wait for the source to update; skip the day if needed. |
+| *last updated … ago* / *working days old* | A source hasn't updated (e.g. a holiday). Limits: gold 36 hours, Bitcoin 1 hour, Brent 4 days, central bank 3 working days. | Wait for the source to update; skip the day if needed. |
 | *changed …% since yesterday (limit …)* | A big jump. Could be real news or a wrong reading. | Check the price yourself. If it's real, run the workflow again by hand after checking. |
 | *ratio … expected* | A website changed its layout and the price was read wrongly. | Needs a code fix; ask for help. |
 | *the AI text failed the fact checks twice* | The AI used a number not in the data, or promised returns. | Run again by hand; it usually passes. |

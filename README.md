@@ -19,7 +19,7 @@ If anything is wrong at any step, **nothing is posted** and you get an email exp
 
 ## Your daily routine
 
-1. Around 12:00 you get an email: **"✅ HASSAN DAILY preview – (date)"**. Check the image and caption.
+1. Shortly after 12:00 (usually 12:05–12:40) you get an email: **"✅ HASSAN DAILY preview – (date)"**. Check the image and caption.
 2. GitHub also emails you: **"Deployment review required"** (or you get a notification in the GitHub mobile app).
 3. To post it, open the link (or go to **github.com → your repository → Actions**, click today's run) and click **Review deployments → tick "production" → Approve and deploy**.
    To skip today, click **Reject** (or do nothing).
@@ -50,7 +50,7 @@ Settings live on GitHub: **your repository → Settings → Secrets and variable
 | `AI_MODEL` | Optional: a specific model. Leave empty for the default. | e.g. `gemini-3.8-flash` |
 | `EMAIL_SERVICE` | How emails are sent. | `gmail` / `resend` |
 
-**Changing the posting time:** edit `.github/workflows/daily.yml`. Change `POST_HOUR_CAIRO: "12"` to the new hour (24-hour clock) and the two `cron:` lines to that hour minus 3 and minus 2 (they're in UTC; for 12:00 Cairo they're `0 9` and `0 10`). Ask for help if unsure.
+**Changing the posting time:** edit `.github/workflows/daily.yml`. The run starts at the first trigger that falls between `WINDOW_START_CAIRO` and `WINDOW_END_CAIRO` (now 12:00–14:00 Cairo time). The `cron:` lines are in UTC and placed at :05 and :35 past the hour, because GitHub sometimes delays or skips runs at exactly :00. To move the time, shift the window and the cron lines by the same number of hours. Ask for help if unsure.
 
 **Running it now, by hand:** **Actions → Daily infographic → Run workflow**. Leave "Dry run" ticked for a test, untick it for a real run.
 

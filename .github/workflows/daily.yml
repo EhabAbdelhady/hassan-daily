@@ -2,11 +2,16 @@ name: Daily infographic
 
 on:
   schedule:
-    # Target: 12:00 Cairo time. GitHub cron is UTC and Egypt switches between summer (UTC+3)
-    # and winter (UTC+2) time, so trigger at both UTC hours; the gate below keeps only the
-    # trigger that lands in the 12:00 hour in Cairo.
-    - cron: "0 9 * * *"   # 12:00 Cairo in summer time
-    - cron: "0 10 * * *"  # 12:00 Cairo in winter time
+    # Target: just after 12:00 Cairo time. GitHub cron is UTC, Egypt switches between summer
+    # (UTC+3) and winter (UTC+2) time, and GitHub sometimes delays or drops scheduled runs,
+    # especially at the top of the hour. So: several triggers at :05/:35, and the gate below
+    # lets the first one inside the Cairo window run; later ones see today is done and stop.
+    - cron: "5 9 * * *"    # summer 12:05 | winter 11:05 (too early, skipped)
+    - cron: "35 9 * * *"   # summer 12:35 | winter 11:35 (too early, skipped)
+    - cron: "5 10 * * *"   # summer 13:05 | winter 12:05
+    - cron: "35 10 * * *"  # summer 13:35 | winter 12:35
+    - cron: "5 11 * * *"   # summer 14:05 (too late, skipped) | winter 13:05
+    - cron: "35 11 * * *"  # summer 14:35 (too late, skipped) | winter 13:35
   workflow_dispatch:
     inputs:
       dry_run:
@@ -19,7 +24,9 @@ permissions:
   actions: write    # keep-alive and cancelling stale approval requests
 
 env:
-  POST_HOUR_CAIRO: "12"
+  # Scheduled runs only start between these Cairo times (24-hour clock, HHMM)
+  WINDOW_START_CAIRO: "1200"
+  WINDOW_END_CAIRO: "1400"
   # Settings (Repository → Settings → Secrets and variables → Actions → Variables)
   DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true') || vars.DRY_RUN || 'true' }}
   REQUIRE_APPROVAL: ${{ vars.REQUIRE_APPROVAL || 'true' }}
@@ -64,16 +71,32 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Check it's 12:00 in Cairo (scheduled runs only)
+      - name: Check the Cairo time window and that today's scheduled run hasn't happened (scheduled runs only)
         id: gate
         run: |
-          hour=$(TZ=Africa/Cairo date +%H)
+          now=$(TZ=Africa/Cairo date +%H%M)
+          today=$(TZ=Africa/Cairo date +%F)
           run=true
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$hour" != "$POST_HOUR_CAIRO" ]; then
-            echo "Cairo time is ${hour}:xx, not ${POST_HOUR_CAIRO}:xx. This is the other summer/winter trigger, skipping."
-            run=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$now" -lt "$WINDOW_START_CAIRO" ] || [ "$now" -ge "$WINDOW_END_CAIRO" ]; then
+              echo "Cairo time is $now, outside $WINDOW_START_CAIRO-$WINDOW_END_CAIRO. Skipping."
+              run=false
+            elif [ "$(cat data/last_scheduled_run.txt 2>/dev/null)" = "$today" ]; then
+              echo "Today's scheduled run already happened ($today). Skipping."
+              run=false
+            fi
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - name: Mark today's scheduled run as started
+        if: steps.gate.outputs.run == 'true' && github.event_name == 'schedule'
+        run: |
+          TZ=Africa/Cairo date +%F > data/last_scheduled_run.txt
+          git config user.name "hassan-daily-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/last_scheduled_run.txt
+          git commit -m "Scheduled run $(TZ=Africa/Cairo date +%F)"
+          git pull --rebase && git push
 
       - name: Cancel yesterday's unanswered approval requests
         if: steps.gate.outputs.run == 'true'

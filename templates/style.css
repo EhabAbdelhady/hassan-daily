@@ -1,11 +1,14 @@
 /* Fonts are bundled in assets/fonts so rendering never depends on the network */
-@font-face { font-family: 'Cairo'; src: url('../assets/fonts/Cairo.ttf') format('truetype'); font-weight: 200 1000; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; src: url('../assets/fonts/IBMPlexSansArabic-Regular.ttf') format('truetype'); font-weight: 400; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; src: url('../assets/fonts/IBMPlexSansArabic-Medium.ttf') format('truetype'); font-weight: 500; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; src: url('../assets/fonts/IBMPlexSansArabic-SemiBold.ttf') format('truetype'); font-weight: 600; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; src: url('../assets/fonts/IBMPlexSansArabic-Bold.ttf') format('truetype'); font-weight: 700 900; }
 @font-face { font-family: 'Montserrat'; src: url('../assets/fonts/Montserrat.ttf') format('truetype'); font-weight: 100 900; }
-@font-face { font-family: 'Tajawal'; src: url('../assets/fonts/Tajawal-Regular.ttf') format('truetype'); font-weight: 400; }
-@font-face { font-family: 'Tajawal'; src: url('../assets/fonts/Tajawal-Medium.ttf') format('truetype'); font-weight: 500 600; }
-@font-face { font-family: 'Tajawal'; src: url('../assets/fonts/Tajawal-Bold.ttf') format('truetype'); font-weight: 700; }
-@font-face { font-family: 'Tajawal'; src: url('../assets/fonts/Tajawal-ExtraBold.ttf') format('truetype'); font-weight: 800; }
-@font-face { font-family: 'Tajawal'; src: url('../assets/fonts/Tajawal-Black.ttf') format('truetype'); font-weight: 900; }
+
+/* Arabic text font: change it here only */
+:root {
+  --font-ar: 'IBM Plex Sans Arabic', sans-serif;
+}
 
 * {
   box-sizing: border-box;
@@ -19,7 +22,7 @@ body {
   height: 1350px;
   margin: 0;
   padding: 0;
-  font-family: 'Tajawal', 'Cairo', sans-serif;
+  font-family: var(--font-ar);
   background-color: #f8fafc;
   direction: rtl;
   overflow: hidden;
@@ -34,7 +37,7 @@ body {
    ========================================================================== */
 .header-container {
   width: 1080px;
-  height: 395px;
+  height: 330px;
   flex-shrink: 0;
   position: relative;
   background-image: url('../assets/header_bg.jpg');
@@ -54,14 +57,14 @@ body {
 
 .header-slogan {
   position: absolute;
-  top: 18px;
+  top: 14px;
   right: 28px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   font-family: 'Montserrat', sans-serif;
   font-weight: 800;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.25;
   letter-spacing: 1.2px;
   color: #ffffff;
@@ -73,8 +76,8 @@ body {
   position: absolute;
   left: 0px;
   bottom: 0px;
-  width: 440px;
-  height: 395px;
+  width: 370px;
+  height: 330px;
   background-image: url('../assets/profile.png');
   background-size: contain;
   background-repeat: no-repeat;
@@ -86,7 +89,7 @@ body {
 .header-branding {
   position: absolute;
   right: 32px;
-  bottom: 25px;
+  bottom: 16px;
   width: 580px;
   display: flex;
   flex-direction: column;
@@ -105,7 +108,7 @@ body {
 .brand-title {
   font-family: 'Montserrat', sans-serif;
   font-weight: 900;
-  font-size: 58px;
+  font-size: 52px;
   letter-spacing: 2px;
   background: linear-gradient(180deg, #FFFFFF 0%, #FCE08E 30%, #D4AF37 70%, #996515 100%);
   -webkit-background-clip: text;
@@ -119,19 +122,19 @@ body {
   border: 1.5px solid #d4af37;
   border-radius: 6px;
   padding: 4px 26px;
-  margin-top: 10px;
+  margin-top: 8px;
   color: #ffffff;
-  font-family: 'Cairo', sans-serif;
+  font-family: var(--font-ar);
   font-weight: 700;
-  font-size: 21px;
+  font-size: 22px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .header-tagline {
   color: #f1f5f9;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
-  margin-top: 7px;
+  margin-top: 5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
@@ -155,7 +158,7 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  height: 290px;
+  height: 282px;
 }
 
 .card-header {
@@ -181,8 +184,8 @@ body {
 
 .card-header-title {
   color: #ffffff;
-  font-family: 'Cairo', sans-serif;
-  font-size: 19px;
+  font-family: var(--font-ar);
+  font-size: 21px;
   font-weight: 700;
 }
 
@@ -210,13 +213,13 @@ body {
   border-bottom: none;
 }
 .gold-karat {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #334155;
 }
 .gold-price {
-  font-family: 'Cairo', sans-serif;
-  font-size: 21px;
+  font-family: var(--font-ar);
+  font-size: 23px;
   font-weight: 800;
   color: #0f2b5c;
 }
@@ -229,15 +232,15 @@ body {
 
 /* Hero Price Styles (Bitcoin, Brent) */
 .hero-price {
-  font-family: 'Cairo', sans-serif;
-  font-size: 34px;
+  font-family: var(--font-ar);
+  font-size: 38px;
   font-weight: 800;
   color: #0f2b5c;
   line-height: 1.1;
   letter-spacing: -0.5px;
 }
 .hero-unit {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: #475569;
   margin-top: 2px;
@@ -247,7 +250,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  font-family: 'Cairo', sans-serif;
+  font-family: var(--font-ar);
   font-size: 18px;
   font-weight: 800;
   margin-top: 4px;
@@ -286,8 +289,8 @@ body {
   align-items: center;
 }
 .fx-price {
-  font-family: 'Cairo', sans-serif;
-  font-size: 27px;
+  font-family: var(--font-ar);
+  font-size: 30px;
   font-weight: 800;
   color: #0f2b5c;
   line-height: 1.1;
@@ -304,8 +307,8 @@ body {
   flex-shrink: 0;
   background: #fafafa;
   border-top: 1px solid #f1f5f9;
-  padding: 6px 6px;
-  font-size: 12px;
+  padding: 9px 6px;
+  font-size: 15px;
   color: #64748b;
   line-height: 1.35;
   text-align: center;
@@ -368,34 +371,34 @@ body {
   height: 30px;
 }
 .column-badge-title {
-  font-family: 'Cairo', sans-serif;
-  font-size: 21px;
+  font-family: var(--font-ar);
+  font-size: 25px;
   font-weight: 800;
   color: #0f172a;
 }
 
 .bullet-item {
   position: relative;
-  padding-right: 20px;
+  padding-right: 22px;
 }
 .bullet-dot {
   position: absolute;
   right: 0;
-  top: 9px;
-  width: 10px;
-  height: 10px;
+  top: 14px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: #f59e0b;
 }
 .bullet-content {
-  font-size: 19px;
-  line-height: 1.55;
+  font-size: 26px;
+  line-height: 1.5;
   color: #1e293b;
   text-align: right;
 }
 .bullet-source {
   display: block;
-  font-size: 13.5px;
+  font-size: 16px;
   color: #64748b;
   margin-top: 2px;
   font-weight: 500;
@@ -434,13 +437,13 @@ body {
   height: 30px;
 }
 .tip-title {
-  font-family: 'Cairo', sans-serif;
-  font-size: 22px;
+  font-family: var(--font-ar);
+  font-size: 25px;
   font-weight: 800;
   color: #1e293b;
 }
 .tip-body {
-  font-size: 17.5px;
+  font-size: 22px;
   line-height: 1.5;
   color: #1e293b;
   font-weight: 600;
@@ -453,7 +456,7 @@ body {
 .disclaimer {
   flex-shrink: 0;
   text-align: center;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #64748b;
   padding: 8px 18px 8px 18px;
@@ -496,7 +499,7 @@ body {
 }
 
 .footer-tagline {
-  font-family: 'Cairo', sans-serif;
+  font-family: var(--font-ar);
   color: #e2e8f0;
   font-size: 15px;
   font-weight: 600;

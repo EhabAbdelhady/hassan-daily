@@ -45,6 +45,16 @@ def format_arabic_date(dt: datetime = None) -> str:
     return f"{day_name} {dt.day} {ARABIC_MONTHS[dt.month]} {dt.year}"
 
 
+def format_card_time(dt: datetime, include_time: bool = True) -> str:
+    """Short last-update text for a price card, in Cairo time: 10 أكتوبر، 11:59 م"""
+    dt = dt.astimezone(CAIRO_TZ)
+    date_str = f"{dt.day} {ARABIC_MONTHS[dt.month]}"
+    if not include_time:
+        return date_str
+    h_12 = dt.hour % 12 or 12
+    return f"{date_str}، {h_12}:{dt.minute:02d} {'ص' if dt.hour < 12 else 'م'}"
+
+
 def format_arabic_timestamp(dt: datetime, include_time: bool = True) -> str:
     """Formats a source's last-update time in Cairo time: آخر تحديث 29 سبتمبر 2026 (الساعة 01:09 صباحاً)"""
     dt = dt.astimezone(CAIRO_TZ)

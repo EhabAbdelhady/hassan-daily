@@ -32,8 +32,8 @@ src/
     meta.py              # debug_token check, POST /{page}/photos (caption=), FB story = unpublished photo →
                          # /{page}/photo_stories, IG container (media_type=STORIES for stories) → media_publish.
                          # Instagram only accepts JPEG: hosting.as_jpeg() swaps the Cloudinary extension
-  (story)                # templates/story.html: 1080x1920 frame, feed PNG pasted unscaled at y=285;
-                         # check_story() requires a pixel match, so the number checks carry over
+  (story)                # templates/story.html: 1080x1920, four prices in large type; content kept within
+                         # y≈270–1650 (apps' story buttons). Same data-verify keys → same text+OCR checks
     posts_log.py         # data/posts.json: one post per platform per date (facebook, facebook_story, instagram,
                          # instagram_story); 'uncertain' (no response) is never retried
   safety/
@@ -41,7 +41,8 @@ src/
     render_checks.py     # [data-verify] elements: page text, visibility, then RapidOCR on PNG crops
   notify/emailer.py      # Gmail SMTP (16-char app password) or Resend; send_preview / send_alert
   collectors/            # One collector per asset, plus aggregator.py (builds the template/AI payload)
-    gold.py              # iSagha scrape (market.isagha.com/prices): "بيع" (sell) price + page's "آخر تحديث" time
+    gold.py              # iSagha (market.isagha.com/prices): price table read by column names (العيار/بيع),
+                         # text pattern as fallback; page's "آخر تحديث" time. Page layout changed 2026-10-10
     fx.py                # CBE English exchange-rates page: US Dollar buy/sell + "Last Updated" date
     crypto.py            # CoinGecko simple/price → Binance ticker fallback (both real sources)
     oil.py               # yfinance BZ=F 5-minute bars, labelled "Yahoo Finance"
@@ -55,7 +56,8 @@ src/
   render/renderer.py     # Jinja2 → templates/rendered_infographic.html → Playwright screenshot
   utils/arabic_date.py   # Arabic dates; CAIRO_TZ = ZoneInfo("Africa/Cairo")
 templates/               # infographic.html (Jinja2) + style.css; rendered_infographic.html is generated (ignored)
-assets/                  # Fixed images, icons/*.svg, fonts/ (Cairo, Tajawal, Montserrat, OFL licensed, loaded via @font-face)
+assets/                  # Fixed images, icons/*.svg, fonts/ (IBM Plex Sans Arabic + Montserrat, OFL; Tahoma can't be used:
+                         # Microsoft license, public repo, not on Linux runners). Arabic font set once in style.css --font-ar
 tests/                   # pytest (offline: parsers, content checks, history)
 output/                  # Generated PNG + caption.txt (ignored)
 ```
@@ -68,6 +70,9 @@ output/                  # Generated PNG + caption.txt (ignored)
 - Every number on the image has a `data-verify` attribute and is checked by text and by OCR. New numbers on the template need one.
 - Gemini: rules go in the prompt, not system_instruction, and the schema goes in response_json_schema (the other forms get 503 on the free tier). Busy → retry, then gemini-3.5-flash-lite.
 - Posting requests are never retried automatically (duplicate risk). Every platform posts at most once per Cairo date.
+- 2 opportunities + 2 risks (POINTS_PER_COLUMN), ≤20 words each. FIT_TEXT_JS shrinks analysis/tip text in 0.5px steps
+  on long days (never below 21px / 18px); the overflow check remains the final guard.
+- Card footers are one line: <bdi>source</bdi> · <bdi>format_card_time()</bdi> (bdi keeps mixed Arabic/Latin in order).
 - The layout is a flex column. The analysis section absorbs leftover height, so longer AI text shrinks the whitespace, not the cards.
 
 ## Running

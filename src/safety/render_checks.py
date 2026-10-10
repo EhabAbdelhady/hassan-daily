@@ -73,15 +73,3 @@ def check_render(png_path: Path, report: Dict[str, Any], data: Dict[str, Any]) -
         problems.append(f"Font not loaded: {font}")
     return problems
 
-
-def check_story(story_png: Path, feed_png: Path, card_top: int) -> List[str]:
-    """The story must contain the already-verified feed image exactly, unscaled and complete."""
-    story = np.asarray(Image.open(story_png).convert("RGB"), dtype=np.int16)
-    feed = np.asarray(Image.open(feed_png).convert("RGB"), dtype=np.int16)
-    if story.shape != (1920, 1080, 3):
-        return [f"Story image is {story.shape[1]}x{story.shape[0]}, expected 1080x1920"]
-    region = story[card_top:card_top + feed.shape[0], :feed.shape[1]]
-    diff = np.abs(region - feed).max() if region.shape == feed.shape else 255
-    if diff > 3:
-        return [f"Story doesn't contain the verified infographic exactly (max pixel difference {diff})"]
-    return []

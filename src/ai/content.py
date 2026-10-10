@@ -10,6 +10,7 @@ from .prompts import build_prompts
 from ..utils.arabic_date import ARABIC_MONTHS
 
 DISCLAIMER = "تنويه: المحتوى للأغراض المعرفية فقط، ولا يُعد نصيحة استثمارية أو مالية."
+POINTS_PER_COLUMN = 2
 HASHTAGS = "#HassanDaily #الذهب #الدولار #عقارات #مصر"  # 5: Instagram's current recommendation
 
 # Phrases that promise returns or certainty. Any match fails the check.
@@ -74,8 +75,9 @@ def check_text(texts: List[str], data: Dict[str, Any]) -> List[str]:
 
 def _validate(ai: AIContentResponse, data: Dict[str, Any]) -> None:
     problems = []
-    if len(ai.opportunities) != 3 or len(ai.risks) != 3:
-        problems.append(f"Expected 3 opportunities and 3 risks, got {len(ai.opportunities)} and {len(ai.risks)}")
+    if len(ai.opportunities) != POINTS_PER_COLUMN or len(ai.risks) != POINTS_PER_COLUMN:
+        problems.append(f"Expected {POINTS_PER_COLUMN} opportunities and {POINTS_PER_COLUMN} risks, "
+                        f"got {len(ai.opportunities)} and {len(ai.risks)}")
     for item in ai.opportunities + ai.risks:
         if not item.based_on:
             problems.append(f"Point has no indicator: «{item.text}»")

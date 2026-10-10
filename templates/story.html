@@ -5,69 +5,285 @@
   <title>Hassan Daily Story</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* 1080x1920 story frame; the verified 1080x1350 infographic is placed unscaled at y=285 */
+    /* 1080x1920 story. Content stays between y≈270 and y≈1650: Facebook/Instagram cover the
+       top (profile name, progress bar) and bottom (reply bar) of a story with their own buttons. */
     body.story {
       width: 1080px;
       height: 1920px;
       display: block;
-      background: linear-gradient(180deg, #0b0f19 0%, #121a2b 50%, #0b0f19 100%);
+      background: #0b0f19;
+      color: #1e293b;
     }
-    .story-top {
+    .s-bg {
       position: absolute;
-      top: 120px;
+      inset: 0 0 auto 0;
+      height: 760px;
+      background-image: url('../assets/header_bg.jpg');
+      background-size: cover;
+      background-position: center top;
+    }
+    .s-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(11, 15, 25, 0.25) 0%, rgba(11, 15, 25, 0.75) 55%, #0b0f19 100%);
+    }
+    .s-top {
+      position: absolute;
+      top: 280px;
       left: 0;
       width: 1080px;
-      height: 150px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
+      gap: 12px;
+      z-index: 2;
     }
-    .story-brand {
+    .s-brand {
       font-family: 'Montserrat', sans-serif;
       font-weight: 900;
-      font-size: 54px;
+      font-size: 66px;
       letter-spacing: 2px;
-      color: #d4af37;
       line-height: 1;
+      background: linear-gradient(180deg, #FFFFFF 0%, #FCE08E 30%, #D4AF37 70%, #996515 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .story-date {
-      font-family: 'Cairo', sans-serif;
+    .s-date {
+      font-family: var(--font-ar);
+      font-weight: 700;
+      font-size: 32px;
+      color: #ffffff;
+      background: #0a0e17;
+      border: 2px solid #d4af37;
+      border-radius: 8px;
+      padding: 4px 30px;
+    }
+    .s-grid {
+      position: absolute;
+      top: 480px;
+      left: 36px;
+      width: 1008px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      z-index: 2;
+    }
+    .s-card {
+      height: 520px;
+      background: #ffffff;
+      border: 2px solid #d4af37;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .s-head {
+      height: 78px;
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #1e2229 0%, #0d1016 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+    }
+    .s-title {
+      font-family: var(--font-ar);
+      font-weight: 700;
+      font-size: 32px;
+      color: #ffffff;
+    }
+    .s-icon {
+      width: 78px;
+      height: 58px;
+      object-fit: contain;
+    }
+    .s-icon.glow {
+      filter: drop-shadow(0 0 5px rgba(255, 236, 179, 0.55)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+    }
+    .s-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 22px;
+      overflow: hidden;
+    }
+    .s-hero {
+      font-family: var(--font-ar);
+      font-weight: 700;
+      font-size: 72px;
+      line-height: 1.05;
+      color: #0f2b5c;
+    }
+    .s-unit {
+      font-family: var(--font-ar);
+      font-weight: 600;
+      font-size: 28px;
+      color: #475569;
+    }
+    .s-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px dashed #e2e8f0;
+      padding: 6px 0;
+    }
+    .s-row:last-of-type {
+      border-bottom: none;
+    }
+    .s-karat {
+      font-family: var(--font-ar);
       font-weight: 700;
       font-size: 30px;
-      color: #f1f5f9;
+      color: #334155;
     }
-    .story-card {
-      position: absolute;
-      top: 285px;
-      left: 0;
-      width: 1080px;
-      height: 1350px;
-      border-top: 3px solid #d4af37;
-      border-bottom: 3px solid #d4af37;
-      box-sizing: content-box;
-      margin-top: -3px;
+    .s-price {
+      font-family: var(--font-ar);
+      font-weight: 700;
+      font-size: 44px;
+      color: #0f2b5c;
     }
-    .story-bottom {
+    .s-price small {
+      font-size: 24px;
+      color: #64748b;
+      margin-right: 6px;
+    }
+    .s-fx {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.1;
+    }
+    .s-fx .s-hero {
+      font-size: 60px;
+    }
+    .s-card .change-pill {
+      font-size: 34px;
+      margin-top: 6px;
+    }
+    .s-card .change-pill .change-label {
+      font-size: 22px;
+    }
+    .s-footer {
+      flex-shrink: 0;
+      background: #fafafa;
+      border-top: 1px solid #f1f5f9;
+      padding: 12px 10px;
+      text-align: center;
+      font-family: var(--font-ar);
+      font-size: 22px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .s-footer b {
+      color: #475569;
+    }
+    .s-bottom {
       position: absolute;
-      top: 1660px;
+      top: 1572px;
       left: 0;
       width: 1080px;
       text-align: center;
-      font-family: 'Cairo', sans-serif;
+      font-family: var(--font-ar);
       font-weight: 700;
-      font-size: 34px;
+      font-size: 40px;
       color: #d4af37;
+      z-index: 2;
+    }
+    .s-disclaimer {
+      font-size: 20px;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-top: 4px;
     }
   </style>
 </head>
 <body class="story">
-  <div class="story-top">
-    <div class="story-brand">HASSAN DAILY</div>
-    <div class="story-date">{{ date_arabic }}</div>
+  {% macro change_pill(change, key) %}
+    {% if change %}
+    <div class="change-pill {{ change.direction }}" style="direction: ltr;">
+      {% if change.direction == 'up' %}<span>▲</span>{% elif change.direction == 'down' %}<span>▼</span>{% endif %}
+      <span data-verify="{{ key }}">{{ change.text }}</span>
+      <span class="change-label">عن أمس</span>
+    </div>
+    {% endif %}
+  {% endmacro %}
+
+  <div class="s-bg"></div>
+
+  <div class="s-top">
+    <div class="s-brand">HASSAN DAILY</div>
+    <div class="s-date">{{ date_arabic }}</div>
   </div>
-  <img class="story-card" src="{{ feed_image }}" alt="">
-  <div class="story-bottom">التحليل الكامل في منشور اليوم</div>
+
+  <!-- LTR grid so the visual order matches the feed: Gold, Bitcoin / USD, Brent -->
+  <div class="s-grid" style="direction: ltr;">
+    <div class="s-card" style="direction: rtl;">
+      <div class="s-head">
+        <span class="s-title">الذهب في مصر</span>
+        <img class="s-icon" src="../assets/gold_bars.png" alt="">
+      </div>
+      <div class="s-body">
+        {% for karat, key in (("24", "24k"), ("21", "21k"), ("18", "18k")) %}
+        <div class="s-row">
+          <span class="s-karat">عيار {{ karat }}</span>
+          <span class="s-price"><span data-verify="gold_{{ key }}">{{ gold['price_' ~ key] }}</span><small>ج.م</small></span>
+        </div>
+        {% endfor %}
+        {{ change_pill(gold.change, 'gold_change') }}
+      </div>
+      <div class="s-footer"><b><bdi>{{ gold.source }}</bdi></b> · <bdi>{{ gold.updated_at }}</bdi></div>
+    </div>
+
+    <div class="s-card" style="direction: rtl;">
+      <div class="s-head">
+        <span class="s-title">Bitcoin</span>
+        <img class="s-icon" src="../assets/bitcoin_logo.png" alt="">
+      </div>
+      <div class="s-body">
+        <div class="s-hero" data-verify="bitcoin">{{ crypto.price }}</div>
+        <div class="s-unit">دولار</div>
+        {{ change_pill(crypto.change, 'bitcoin_change') }}
+      </div>
+      <div class="s-footer"><b><bdi>{{ crypto.source }}</bdi></b> · <bdi>{{ crypto.updated_at }}</bdi></div>
+    </div>
+
+    <div class="s-card" style="direction: rtl;">
+      <div class="s-head">
+        <span class="s-title">الدولار مقابل الجنيه</span>
+        <img class="s-icon" src="../assets/dollar_bills.png" alt="">
+      </div>
+      <div class="s-body">
+        <div class="s-fx"><span class="s-hero" data-verify="usd_buy">{{ fx.buy }}</span><span class="s-unit">شراء</span></div>
+        <div class="s-fx"><span class="s-hero" data-verify="usd_sell">{{ fx.sell }}</span><span class="s-unit">بيع</span></div>
+        {{ change_pill(fx.change, 'usd_change') }}
+      </div>
+      <div class="s-footer"><b><bdi>{{ fx.source }}</bdi></b> · <bdi>{{ fx.updated_at }}</bdi></div>
+    </div>
+
+    <div class="s-card" style="direction: rtl;">
+      <div class="s-head">
+        <span class="s-title">Brent</span>
+        <img class="s-icon glow" src="../assets/oil_barrel.png" alt="">
+      </div>
+      <div class="s-body">
+        <div class="s-hero" data-verify="brent">{{ oil.price }}</div>
+        <div class="s-unit">دولار / برميل</div>
+        {{ change_pill(oil.change, 'brent_change') }}
+      </div>
+      <div class="s-footer"><b><bdi>{{ oil.source }}</bdi></b> · <bdi>{{ oil.updated_at }}</bdi></div>
+    </div>
+  </div>
+
+  <div class="s-bottom">
+    التحليل الكامل في منشور اليوم
+    <div class="s-disclaimer">{{ disclaimer }}</div>
+  </div>
 </body>
 </html>

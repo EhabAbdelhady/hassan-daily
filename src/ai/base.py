@@ -18,8 +18,8 @@ class ContentItem(BaseModel):
 class AIContentResponse(BaseModel):
     """What the model writes. Sources, prices in the caption, and the disclaimer are added by code."""
 
-    opportunities: List[ContentItem] = Field(description="Exactly 3 opportunities for real estate / investment")
-    risks: List[ContentItem] = Field(description="Exactly 3 risks and their impact on real estate")
+    opportunities: List[ContentItem] = Field(description="Exactly 2 opportunities for real estate / investment")
+    risks: List[ContentItem] = Field(description="Exactly 2 risks and their impact on real estate")
     tip_investment: str = Field(description="One-line Arabic investment tip of the day")
     tip_real_estate: str = Field(description="One-line Arabic real estate tip of the day")
     caption_summary: str = Field(

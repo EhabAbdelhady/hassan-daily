@@ -79,8 +79,7 @@
         {{ change_pill(gold.change, 'gold_change', small=true) }}
       </div>
       <div class="card-footer">
-        <div>المصدر: <span class="card-footer-source">{{ gold.source }}</span></div>
-        <div class="updated">{{ gold.updated_at }}</div>
+        <div><bdi class="card-footer-source">{{ gold.source }}</bdi> · <bdi>{{ gold.updated_at }}</bdi></div>
       </div>
     </div>
 
@@ -96,8 +95,7 @@
         {{ change_pill(crypto.change, 'bitcoin_change') }}
       </div>
       <div class="card-footer">
-        <div>المصدر: <span class="card-footer-source">{{ crypto.source }}</span></div>
-        <div class="updated">{{ crypto.updated_at }}</div>
+        <div><bdi class="card-footer-source">{{ crypto.source }}</bdi> · <bdi>{{ crypto.updated_at }}</bdi></div>
       </div>
     </div>
 
@@ -121,9 +119,7 @@
         {{ change_pill(fx.change, 'usd_change', small=true) }}
       </div>
       <div class="card-footer">
-        <div>المصدر: <span class="card-footer-source">{{ fx.source }}</span></div>
-        <div>متوسط سعر السوق</div>
-        <div class="updated">{{ fx.updated_at }}</div>
+        <div><bdi class="card-footer-source">{{ fx.source }}</bdi> · <bdi>{{ fx.updated_at }}</bdi></div>
       </div>
     </div>
 
@@ -139,8 +135,7 @@
         {{ change_pill(oil.change, 'brent_change') }}
       </div>
       <div class="card-footer">
-        <div>المصدر: <span class="card-footer-source">{{ oil.source }}</span></div>
-        <div class="updated">{{ oil.updated_at }}</div>
+        <div><bdi class="card-footer-source">{{ oil.source }}</bdi> · <bdi>{{ oil.updated_at }}</bdi></div>
       </div>
     </div>
 

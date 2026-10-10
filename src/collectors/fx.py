@@ -13,7 +13,7 @@ CBE_URL = "https://www.cbe.org.eg/en/economic-research/statistics/exchange-rates
 
 
 class FXCollector:
-    NAME = "البنك المركزي المصري (CBE)"
+    NAME = "البنك المركزي المصري"
 
     def __init__(self, timeout: int = 15):
         self.timeout = timeout

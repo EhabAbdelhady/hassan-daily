@@ -4,6 +4,8 @@ import re
 from datetime import datetime
 
 import requests
+from typing import Dict, Optional
+
 from bs4 import BeautifulSoup
 
 from .base import GoldData, CollectorError
@@ -30,8 +32,9 @@ class GoldCollector:
         except requests.RequestException as e:
             raise CollectorError(f"iSagha request failed: {e}") from e
 
-        text = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
-        prices = self._parse_prices(text)
+        soup = BeautifulSoup(r.text, "html.parser")
+        text = soup.get_text(" ", strip=True)
+        prices = self._parse_table(soup) or self._parse_prices(text)
         return GoldData(
             price_24k=prices["24k"],
             price_21k=prices["21k"],
@@ -39,6 +42,28 @@ class GoldCollector:
             source=self.NAME,
             updated_at=self._parse_updated_at(text),
         )
+
+    def _parse_table(self, soup: BeautifulSoup) -> Optional[Dict[str, float]]:
+        """Reads the detailed price table by its column names (العيار / بيع): survives layout changes
+        better than text patterns. Returns None if the table isn't there."""
+        for table in soup.find_all("table"):
+            headers = [th.get_text(" ", strip=True) for th in table.find_all("th")]
+            karat_col = next((i for i, h in enumerate(headers) if h.startswith("العيار")), None)
+            sell_col = next((i for i, h in enumerate(headers) if h.startswith("بيع")), None)
+            if karat_col is None or sell_col is None:
+                continue
+            found = {}
+            for tr in table.find_all("tr"):
+                cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
+                if len(cells) <= max(karat_col, sell_col):
+                    continue
+                m = re.fullmatch(r"عيار (24|21|18)", cells[karat_col])
+                price = re.match(r"([\d,.]+)\s*ج\.م", cells[sell_col])
+                if m and price:
+                    found[f"{m.group(1)}k"] = float(price.group(1).replace(",", ""))
+            if len(found) == 3:
+                return found
+        return None
 
     def _parse_prices(self, text: str) -> dict:
         # e.g. "عيار 21 ▼ شراء 6070 ج.م بيع 6120 ج.م" → we use the sell (بيع) price

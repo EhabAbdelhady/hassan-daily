@@ -8,7 +8,7 @@ from .fx import FXCollector
 from .crypto import CryptoCollector
 from .oil import OilCollector
 from ..storage.history import HistoryStorage
-from ..utils.arabic_date import format_arabic_date, format_arabic_timestamp, get_cairo_now
+from ..utils.arabic_date import format_arabic_date, format_card_time, get_cairo_now
 
 
 def format_number(value: float, max_decimals: int = 2, min_decimals: int = 0) -> str:
@@ -84,7 +84,7 @@ class MarketDataAggregator:
                 "raw_21k": gold.price_21k,
                 "raw_18k": gold.price_18k,
                 "source": gold.source,
-                "updated_at": format_arabic_timestamp(gold.updated_at),
+                "updated_at": format_card_time(gold.updated_at),
                 "updated_at_iso": gold.updated_at.isoformat(),
                 "change": change(gold.price_21k, ("gold", "21k")),
             }
@@ -95,7 +95,7 @@ class MarketDataAggregator:
                 "raw_buy": fx.buy,
                 "raw_sell": fx.sell,
                 "source": fx.source,
-                "updated_at": format_arabic_timestamp(fx.updated_at, include_time=not fx.date_only),
+                "updated_at": format_card_time(fx.updated_at, include_time=not fx.date_only),
                 "updated_at_iso": fx.updated_at.isoformat(),
                 "date_only": fx.date_only,
                 "change": change(fx.buy, ("usd_egp", "buy")),
@@ -105,7 +105,7 @@ class MarketDataAggregator:
                 "price": format_number(crypto.price, max_decimals=0),
                 "raw_price": crypto.price,
                 "source": crypto.source,
-                "updated_at": format_arabic_timestamp(crypto.updated_at),
+                "updated_at": format_card_time(crypto.updated_at),
                 "updated_at_iso": crypto.updated_at.isoformat(),
                 "change": change(crypto.price, ("bitcoin", "price")),
             }
@@ -114,7 +114,7 @@ class MarketDataAggregator:
                 "price": f"{oil.price:.2f}",
                 "raw_price": oil.price,
                 "source": oil.source,
-                "updated_at": format_arabic_timestamp(oil.updated_at),
+                "updated_at": format_card_time(oil.updated_at),
                 "updated_at_iso": oil.updated_at.isoformat(),
                 "change": change(oil.price, ("brent", "price")),
             }

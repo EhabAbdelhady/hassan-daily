@@ -39,8 +39,8 @@ class StubProvider(BaseAIProvider):
 def _response(first_text):
     item = lambda t, k: ContentItem(text=t, based_on=[k])
     return AIContentResponse(
-        opportunities=[item(first_text, "gold"), item("نص", "usd"), item("نص", "brent")],
-        risks=[item("نص", "bitcoin"), item("نص", "brent"), item("نص", "usd")],
+        opportunities=[item(first_text, "gold"), item("نص", "usd")],
+        risks=[item("نص", "bitcoin"), item("نص", "brent")],
         tip_investment="نصيحة", tip_real_estate="نصيحة", caption_summary="ملخص",
     )
 

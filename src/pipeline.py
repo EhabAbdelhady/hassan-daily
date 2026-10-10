@@ -22,8 +22,8 @@ from .notify import send_preview, send_alert, send_published
 from .publish import posts_log
 from .publish.hosting import as_jpeg, upload_image
 from .publish.meta import MetaError, check_token, post_facebook, post_facebook_story, post_instagram, post_link
-from .render.renderer import STORY_CARD_TOP, InfographicRenderer
-from .safety import check_market_data, check_render, check_story
+from .render.renderer import InfographicRenderer
+from .safety import check_market_data, check_render
 from .utils.arabic_date import CAIRO_TZ, get_cairo_now
 
 
@@ -90,12 +90,11 @@ def prepare(save_history: bool, email: bool) -> None:
 
     story = None
     if _uses_story():
-        renderer = InfographicRenderer()
-        story = renderer.render_story(png, data["date_arabic"])
-        problems = check_story(story, png, STORY_CARD_TOP)
+        story, story_report = InfographicRenderer().render_story(data)
+        problems = check_render(story, story_report, data)
         if problems:
-            raise RunStopped("the story image doesn't match the verified infographic", problems, data, png)
-        print("[Checks] Story verified: contains the checked infographic unchanged")
+            raise RunStopped("the story image doesn't show the fetched numbers correctly", problems, data, story)
+        print("[Checks] Story verified: every number matches the fetched data")
 
     warnings = []
     if _platforms():

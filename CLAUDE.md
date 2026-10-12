@@ -17,8 +17,10 @@ Started in Google Antigravity (phases 1–3), continued in Claude Code. The orig
 main.py                  # CLI: [all|prepare|publish] --dry-run --no-history --no-email
 scripts/meta_page_token.py  # Graph API Explorer user token → long-lived Page token written into .env
 scripts/github_setup.py     # push + .env keys → encrypted GitHub Secrets + Variables + 'production' environment
-.github/workflows/daily.yml # 6 crons at :05/:35 (09–11 UTC); gate: first inside 12:00–14:00 Cairo, once per day via
-                            # data/last_scheduled_run.txt (GitHub drops top-of-hour runs); prepare → artifact →
+.github/workflows/daily.yml # Main start: cron-job.org POSTs workflow_dispatch trigger=scheduled at 12:05 Africa/Cairo
+                            # (GitHub cron ran 6h+ late / not at all, Oct 2026; its 6 crons stay as backup). AUTO_RUN gate:
+                            # 12:00–14:00 window, once/day via data/last_scheduled_run.txt, late start → 'missed' email
+                            # (data/last_missed_alert.txt); prepare → artifact →
                             # publish (environment 'production' unless REQUIRE_APPROVAL=false); keepalive job
 README.md                   # Non-developer guide; keep it in sync with settings/secrets
 src/

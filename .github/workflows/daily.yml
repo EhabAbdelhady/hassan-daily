@@ -1,11 +1,12 @@
 name: Daily infographic
 
 on:
+  # MAIN TRIGGER: cron-job.org calls this workflow's "dispatch" API at 12:05 Cairo time every day
+  # with trigger=scheduled (README: "Daily start: cron-job.org"). GitHub's own scheduler below is
+  # only a backup: on this repository it has started runs 6+ hours late or not at all.
   schedule:
-    # Target: just after 12:00 Cairo time. GitHub cron is UTC, Egypt switches between summer
-    # (UTC+3) and winter (UTC+2) time, and GitHub sometimes delays or drops scheduled runs,
-    # especially at the top of the hour. So: several triggers at :05/:35, and the gate below
-    # lets the first one inside the Cairo window run; later ones see today is done and stop.
+    # GitHub cron is UTC and Egypt switches between summer (UTC+3) and winter (UTC+2) time:
+    # several triggers at :05/:35, and the gate lets the first one inside the Cairo window run.
     - cron: "5 9 * * *"    # summer 12:05 | winter 11:05 (too early, skipped)
     - cron: "35 9 * * *"   # summer 12:35 | winter 11:35 (too early, skipped)
     - cron: "5 10 * * *"   # summer 13:05 | winter 12:05
@@ -18,17 +19,24 @@ on:
         description: "Dry run: everything except uploading and posting"
         type: boolean
         default: true
+      trigger:
+        description: "manual = run now; scheduled = the daily automatic run (time window, once per day, DRY_RUN variable)"
+        type: choice
+        options: [manual, scheduled]
+        default: manual
 
 permissions:
   contents: write   # commit data/history.json and data/posts.json back
   actions: write    # keep-alive and cancelling stale approval requests
 
 env:
-  # Scheduled runs only start between these Cairo times (24-hour clock, HHMM)
+  # The daily automatic run (GitHub schedule or cron-job.org) — not a manual run
+  AUTO_RUN: ${{ github.event_name == 'schedule' || inputs.trigger == 'scheduled' }}
+  # Automatic runs only start between these Cairo times (24-hour clock, HHMM)
   WINDOW_START_CAIRO: "1200"
   WINDOW_END_CAIRO: "1400"
   # Settings (Repository → Settings → Secrets and variables → Actions → Variables)
-  DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true') || vars.DRY_RUN || 'true' }}
+  DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.trigger != 'scheduled' && inputs.dry_run && 'true') || vars.DRY_RUN || 'true' }}
   REQUIRE_APPROVAL: ${{ vars.REQUIRE_APPROVAL || 'true' }}
   CUTOFF_HOURS: ${{ vars.CUTOFF_HOURS || '2' }}
   POST_TO_FACEBOOK: ${{ vars.POST_TO_FACEBOOK || 'true' }}
@@ -71,25 +79,51 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Check the Cairo time window and that today's scheduled run hasn't happened (scheduled runs only)
+      - name: Check the Cairo time window and that today's automatic run hasn't happened (automatic runs only)
         id: gate
         run: |
           now=$(TZ=Africa/Cairo date +%H%M)
           today=$(TZ=Africa/Cairo date +%F)
           run=true
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "$now" -lt "$WINDOW_START_CAIRO" ] || [ "$now" -ge "$WINDOW_END_CAIRO" ]; then
-              echo "Cairo time is $now, outside $WINDOW_START_CAIRO-$WINDOW_END_CAIRO. Skipping."
+          missed=false
+          if [ "$AUTO_RUN" = "true" ]; then
+            done_today=$([ "$(cat data/last_scheduled_run.txt 2>/dev/null)" = "$today" ] && echo yes || echo no)
+            if [ "$done_today" = "yes" ]; then
+              echo "Today's automatic run already happened ($today). Skipping."
               run=false
-            elif [ "$(cat data/last_scheduled_run.txt 2>/dev/null)" = "$today" ]; then
-              echo "Today's scheduled run already happened ($today). Skipping."
+            elif [ "$now" -lt "$WINDOW_START_CAIRO" ]; then
+              echo "Cairo time is $now, before $WINDOW_START_CAIRO. Skipping."
               run=false
+            elif [ "$now" -ge "$WINDOW_END_CAIRO" ]; then
+              echo "Cairo time is $now, after $WINDOW_END_CAIRO and today hasn't run: the start came too late."
+              run=false
+              [ "$(cat data/last_missed_alert.txt 2>/dev/null)" != "$today" ] && missed=true
             fi
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "missed=$missed" >> "$GITHUB_OUTPUT"
 
-      - name: Mark today's scheduled run as started
-        if: steps.gate.outputs.run == 'true' && github.event_name == 'schedule'
+      - name: Email that today's run was missed
+        if: steps.gate.outputs.missed == 'true'
+        run: |
+          pip install -q python-dotenv requests
+          python -c "
+          from src.notify import send_alert
+          send_alert('today\'s automatic run did not start in time', [
+              'The daily start signal arrived at $(TZ=Africa/Cairo date +%H:%M) Cairo time, after the ' + '$WINDOW_END_CAIRO'[:2] + ':00 cutoff.',
+              'Nothing was prepared or posted today.',
+              'To post today anyway: GitHub → Actions → Daily infographic → Run workflow (untick Dry run).',
+              'If this keeps happening, check the cron-job.org job (README: Daily start: cron-job.org).'])
+          "
+          TZ=Africa/Cairo date +%F > data/last_missed_alert.txt
+          git config user.name "hassan-daily-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/last_missed_alert.txt
+          git commit -m "Missed run alert $(TZ=Africa/Cairo date +%F)"
+          git pull --rebase && git push
+
+      - name: Mark today's automatic run as started
+        if: steps.gate.outputs.run == 'true' && env.AUTO_RUN == 'true'
         run: |
           TZ=Africa/Cairo date +%F > data/last_scheduled_run.txt
           git config user.name "hassan-daily-bot"

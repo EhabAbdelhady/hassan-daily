@@ -17,6 +17,8 @@ Started in Google Antigravity (phases 1–3), continued in Claude Code. The orig
 main.py                  # CLI: [all|prepare|publish] --dry-run --no-history --no-email
 scripts/meta_page_token.py  # Graph API Explorer user token → long-lived Page token written into .env
 scripts/github_setup.py     # push + .env keys → encrypted GitHub Secrets + Variables + 'production' environment
+scripts/cronjob_setup.py    # creates/updates cron-job.org job 'Hassan Daily start' (id 8632209) from .env:
+                            # GITHUB_START_TOKEN (Actions RW, this repo) + CRONJOB_API_KEY; tests the token first
 .github/workflows/daily.yml # Main start: cron-job.org POSTs workflow_dispatch trigger=scheduled at 12:05 Africa/Cairo
                             # (GitHub cron ran 6h+ late / not at all, Oct 2026; its 6 crons stay as backup). AUTO_RUN gate:
                             # 12:00–14:00 window, once/day via data/last_scheduled_run.txt, late start → 'missed' email

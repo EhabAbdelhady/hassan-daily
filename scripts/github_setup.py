@@ -5,7 +5,7 @@ Needs in .env:
   GITHUB_REPO=your-username/hassan-daily
   GITHUB_TOKEN=<fine-grained token for that repo; see README "Connecting GitHub">
 
-Run:  .venv/bin/python scripts/github_setup.py            (push + secrets + variables + environment)
+Run:  .venv/bin/python scripts/github_setup.py            (push + secrets + missing variables + environment)
       .venv/bin/python scripts/github_setup.py --test-run (also starts a dry-run of the workflow)
 Secret values are never printed. Requires: pip install pynacl
 """
@@ -87,15 +87,16 @@ def main() -> int:
               f"Saving secret {name}")
         print(f"Secret saved: {name}")
 
-    # 3. Variables
+    # 3. Variables: only add missing ones, never overwrite a setting already changed on GitHub
     values = dict(VARIABLES)
     values.update({k: env[k] for k in VARIABLES_FROM_ENV if env.get(k)})
     for name, value in values.items():
-        r = api.patch(f"{base}/actions/variables/{name}", json={"name": name, "value": value})
-        if r.status_code == 404:
-            r = api.post(f"{base}/actions/variables", json={"name": name, "value": value})
-        check(r, f"Saving variable {name}")
-        print(f"Variable: {name}={value}")
+        current = api.get(f"{base}/actions/variables/{name}")
+        if current.status_code == 200:
+            print(f"Variable kept: {name}={current.json()['value']}")
+            continue
+        check(api.post(f"{base}/actions/variables", json={"name": name, "value": value}), f"Saving variable {name}")
+        print(f"Variable added: {name}={value}")
 
     # 4. Approval environment
     check(api.put(f"{base}/environments/production", json={

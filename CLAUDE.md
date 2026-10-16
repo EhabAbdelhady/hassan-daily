@@ -9,7 +9,8 @@ Started in Google Antigravity (phases 1–3), continued in Claude Code. The orig
 2. Data collectors + `data/history.json` for day-over-day change (done, fixed)
 3. AI text: configurable provider (gemini in use, default anthropic / openai) (done, fixed)
 4. Email preview + safety checks (missing/stale/abnormal-jump prices, verify rendered numbers) (done)
-5. Posting: Meta Graph API (FB Page + IG Business), image hosted on Cloudinary, token check, DRY_RUN, REQUIRE_APPROVAL (done; tested on FAIR DEAL STORE, then switched 2026-10-14 to the main Page "Mahmoud Hassan Talks" (id 770013139532390, ~454K followers) via the owner's account with full control; token data access expires 2027-01-12; IG not linked yet, POST_TO_INSTAGRAM=false)
+5. Posting: Meta Graph API (FB Page + IG Business), image hosted on Cloudinary, token check, DRY_RUN, REQUIRE_APPROVAL (done; tested on FAIR DEAL STORE, then switched 2026-10-14 to the main Page "Mahmoud Hassan Talks" (id 770013139532390, ~454K followers) via the owner's account with full control; token data access expires 2027-01-12; IG not linked yet, POST_TO_INSTAGRAM=false). Since 2026-10-16 REQUIRE_APPROVAL=false:
+   automatic posting, no preview email (only for approval/dry runs); 'posted' email carries image, story, caption
 6. GitHub Actions: daily cron (Cairo time), keep-alive, `production` environment approval, approval cutoff (CUTOFF_HOURS) (done; repo EhabAbdelhady/hassan-daily, public; dry-run with approval verified 2026-10-09)
 
 ## Layout

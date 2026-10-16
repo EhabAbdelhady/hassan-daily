@@ -177,7 +177,7 @@ def publish(email: bool) -> None:
         print(f"[Publish] {p}: already {entry['status']} today ({entry['id'] or entry['detail']}), skipping")
 
     if settings.DRY_RUN:
-        msg = f"DRY RUN: approval received; would have posted to {', '.join(pending) or 'nothing (already posted)'}."
+        msg = f"DRY RUN: would have posted to {', '.join(LABELS[p] for p in pending) or 'nothing (already posted today)'}."
         print(f"[Publish] {msg}")
         if email:
             send_published(date, [msg], [], data)

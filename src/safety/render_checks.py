@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 import numpy as np
 from PIL import Image, ImageOps
@@ -25,19 +25,36 @@ def expected_values(data: Dict[str, Any]) -> Dict[str, str]:
 _ocr_engine = None
 
 
-def _ocr(png: Image.Image, box: Dict[str, float]) -> str:
+# Crop settings (padding, white margin, scale). The first reads almost everything; very large digits
+# (e.g. the story's 72px prices) are sometimes split or doubled by OCR, which the downscaled crops fix.
+OCR_VARIANTS = ((4, 30, 1.0), (4, 30, 0.5), (8, 40, 0.75))
+
+
+def _ocr(png: Image.Image, box: Dict[str, float], pad: int = 4, border: int = 30, scale: float = 1.0) -> str:
     """Reads the text inside one element's box from the final PNG."""
     global _ocr_engine
     if _ocr_engine is None:
         from rapidocr_onnxruntime import RapidOCR
         _ocr_engine = RapidOCR()
-    # Tight crop + plain white margin reads every number exactly; enlarging or loose crops cause misreads
-    pad = 4
     crop = png.crop((max(box["x"] - pad, 0), max(box["y"] - pad, 0),
                      min(box["x"] + box["w"] + pad, png.width), min(box["y"] + box["h"] + pad, png.height)))
-    crop = ImageOps.expand(crop, border=30, fill="white")
+    if scale != 1.0:
+        crop = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))), Image.Resampling.LANCZOS)
+    crop = ImageOps.expand(crop, border=border, fill="white")
     result, _ = _ocr_engine(np.array(crop))
     return " ".join(text for _, text, _ in (result or []))
+
+
+def _ocr_matches(png: Image.Image, box: Dict[str, float], want: str) -> Tuple[bool, List[str]]:
+    """True if any crop setting reads exactly the expected number. A wrong number on the image
+    would have to be misread as exactly the right one to pass, which OCR doesn't do."""
+    reads = []
+    for pad, border, scale in OCR_VARIANTS:
+        read = _ocr(png, box, pad, border, scale)
+        reads.append(read)
+        if _digits(want.replace("+", "")) in _digits(read.replace("+", "")):
+            return True, reads
+    return False, reads
 
 
 def _digits(text: str) -> str:
@@ -61,9 +78,9 @@ def check_render(png_path: Path, report: Dict[str, Any], data: Dict[str, Any]) -
         if item["clipped"]:
             problems.append(f"{key}: '{want}' is hidden or cut off")
             continue
-        read = _ocr(png, item)
-        if _digits(want.replace("+", "")) not in _digits(read.replace("+", "")):
-            problems.append(f"{key}: image reads '{read}', expected '{want}'")
+        ok, reads = _ocr_matches(png, item, want)
+        if not ok:
+            problems.append(f"{key}: image reads {' / '.join(repr(r) for r in reads)}, expected '{want}'")
 
     for box in report["overflowing"]:
         problems.append(f"Text doesn't fit (overflowing box: {box})")

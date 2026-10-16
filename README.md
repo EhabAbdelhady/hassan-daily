@@ -10,8 +10,8 @@ Every day at **12:00 PM Cairo time** this project:
 2. Checks every price: nothing missing, nothing too old, no abnormal jump since yesterday.
 3. Asks an AI (Google Gemini) to write the Arabic opportunities, risks, and tips, **using only those numbers**. It checks every number the AI wrote and rejects promises of returns.
 4. Builds the 1080×1350 Arabic image, then reads the image back to confirm every number on it is exactly right.
-5. Emails you a **preview** (image + caption + the numbers used).
-6. Waits for your **approval** on GitHub, then posts to your Facebook Page, and optionally to your Facebook story, Instagram, and Instagram story.
+5. Emails you (a preview before posting if approval is on; a "posted" confirmation with the image afterwards).
+6. Posts to your Facebook Page and Facebook story (Instagram optional), either automatically or after your approval on GitHub (`REQUIRE_APPROVAL`).
 
 If anything is wrong at any step, **nothing is posted** and you get an email explaining why.
 
@@ -19,17 +19,14 @@ If anything is wrong at any step, **nothing is posted** and you get an email exp
 
 ## Your daily routine
 
-1. Shortly after 12:00 (usually 12:05–12:40) you get an email: **"✅ HASSAN DAILY preview – (date)"**. Check the image and caption.
-2. GitHub also emails you: **"Deployment review required"** (or you get a notification in the GitHub mobile app).
-3. To post it, open the link (or go to **github.com → your repository → Actions**, click today's run) and click **Review deployments → tick "production" → Approve and deploy**.
-   To skip today, click **Reject** (or do nothing).
-4. A minute later you get **"📣 HASSAN DAILY posted"** with the link.
+**Automatic posting (current setting, `REQUIRE_APPROVAL=false`):** nothing to do.
+- Around 12:05 the run checks everything and posts the feed post and story by itself.
+- A minute later you get **"📣 HASSAN DAILY posted – (date)"** with the links, the posted image (story attached), the caption, and the numbers used.
+- If anything is wrong, **nothing is posted** and you get **"⚠️ HASSAN DAILY: not posted"** explaining why.
 
-Stories use a separate tall design (attached to the preview email): the four prices in large type, with the same number checks as the main image. Stories disappear after 24 hours, as usual.
+**With approval (`REQUIRE_APPROVAL=true`):** you get a **preview** email first, and GitHub asks you to approve (**Actions → today's run → Review deployments → production → Approve and deploy**, or from the GitHub mobile app). You have **2 hours** (`CUTOFF_HOURS`); a later approval posts nothing. To skip a day, click **Reject** or do nothing.
 
-You have **2 hours** after the preview to approve. A later approval posts nothing, and you get an email saying so, because prices may have moved.
-
-The GitHub mobile app (iPhone/Android) lets you approve from your phone: open the notification → **Review** → **Approve**.
+Stories use a separate tall design: the four prices in large type, with the same number checks as the main image. Stories disappear after 24 hours, as usual.
 
 ---
 

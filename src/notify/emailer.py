@@ -136,15 +136,23 @@ def send_alert(reason: str, problems: List[str], data: Optional[Dict[str, Any]] 
     _send(f"⚠️ HASSAN DAILY: not posted {date} – {reason}", body, image=png)
 
 
-def send_published(date: str, results: List[str], warnings: List[str], data: Dict[str, Any]) -> None:
-    """Confirms what was posted (or, in a dry run, what would have been)."""
+def send_published(date: str, results: List[str], warnings: List[str], data: Dict[str, Any],
+                   png: Optional[Path] = None, story: Optional[Path] = None, caption: str = "") -> None:
+    """Confirms what was posted (or, in a dry run, what would have been), with the posted image."""
     items = "".join(f"<li>{html.escape(r)}</li>" for r in results)
+    image = '<img src="cid:preview" width="540" style="border:1px solid #e2e8f0;max-width:100%">' if png else ""
+    story_note = "<p style='color:#64748b'>The story image is attached.</p>" if story else ""
+    caption_html = (f'<h3>Caption</h3><div dir="rtl" style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;'
+                    f'padding:12px;font-size:15px;line-height:1.6">{html.escape(caption)}</div>') if caption else ""
     body = f"""
 <div style="font-family:Arial,sans-serif;max-width:720px">
   <h2 style="color:#15803d;margin:0 0 6px">Posted – {date}</h2>
   {_warning_box(warnings)}
   <ul style="line-height:1.8">{items}</ul>
+  {image}
+  {story_note}
+  {caption_html}
   <h3>Numbers used</h3>
   {_price_rows(data)}
 </div>"""
-    _send(f"📣 HASSAN DAILY posted – {date}", body)
+    _send(f"📣 HASSAN DAILY posted – {date}", body, image=png, attachments=[story] if story else None)

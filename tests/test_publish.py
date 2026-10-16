@@ -47,7 +47,7 @@ def env(tmp_path, monkeypatch, market_data):
     monkeypatch.setattr(pl, "post_instagram",
                         lambda url, caption="", story=False: calls["instagram"].append((url, story)) or "ig_1")
     monkeypatch.setattr(pl, "send_alert", lambda reason, *a: calls["alerts"].append(reason))
-    monkeypatch.setattr(pl, "send_published", lambda date, results, *a: calls["published"].append(results))
+    monkeypatch.setattr(pl, "send_published", lambda date, results, *a, **k: calls["published"].append(results))
     write_bundle()
     return {"calls": calls, "write_bundle": write_bundle, "monkeypatch": monkeypatch}
 

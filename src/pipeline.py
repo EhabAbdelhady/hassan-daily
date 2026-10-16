@@ -128,9 +128,11 @@ def prepare(save_history: bool, email: bool) -> None:
         status = (f"Waiting for your approval to post to {targets}. "
                   f"Approve by {deadline:%H:%M} Cairo time ({settings.CUTOFF_HOURS:g} hours), otherwise it won't be posted.")
     else:
-        status = f"Approval is off: posting to {targets} now. You'll get a second email with the links."
+        status = f"Approval is off: posting to {targets} now."
 
-    if email:
+    # The preview is only needed when someone has to look before posting (approval on, or a dry run).
+    # With automatic posting, the "posted" email shows the image instead.
+    if email and (settings.REQUIRE_APPROVAL or settings.DRY_RUN):
         send_preview(png, content.caption, data, status=status, warnings=warnings, story=story)
         print(f"[Email] Preview sent to {settings.ALERT_RECIPIENT_EMAIL}")
     print(f"\n[Prepared] {status}\n[Prepared] Image: {png}\n[Prepared] Caption: {caption_path}")
@@ -218,7 +220,7 @@ def publish(email: bool) -> None:
         raise RunStopped("posting failed" + (" on some platforms" if done else ""),
                          failed + [f"Posted OK: {d}" for d in done], data, png)
     if email:
-        send_published(date, done, token["warnings"], data)
+        send_published(date, done, token["warnings"], data, png=png, story=story, caption=caption)
         print(f"[Email] Confirmation sent to {settings.ALERT_RECIPIENT_EMAIL}")
 
 

@@ -22,7 +22,8 @@ scripts/cronjob_setup.py    # creates/updates cron-job.org job 'Hassan Daily sta
                             # GITHUB_START_TOKEN (Actions RW, this repo) + CRONJOB_API_KEY; tests the token first
 .github/workflows/daily.yml # Main start: cron-job.org POSTs workflow_dispatch trigger=scheduled at 12:05 Africa/Cairo
                             # (GitHub cron ran 6h+ late / not at all, Oct 2026; its 6 crons stay as backup). AUTO_RUN gate:
-                            # 12:00–14:00 window, once/day via data/last_scheduled_run.txt, late start → 'missed' email
+                            # 12:00–14:00 window; cron-job.org starts 12:05/12:35/13:05/13:35; data/last_scheduled_run.txt
+                            # written only after a successful prepare (failed attempts retry); none by 14:00 → 'missed' email
                             # (data/last_missed_alert.txt); prepare → artifact →
                             # publish (environment 'production' unless REQUIRE_APPROVAL=false); keepalive job
 README.md                   # Non-developer guide; keep it in sync with settings/secrets
@@ -73,7 +74,7 @@ output/                  # Generated PNG + caption.txt (ignored)
 - The AI never writes source names or the caption's price list; code adds them. Any number in AI text must match today's data (`check_text`).
 - Daily change compares with the latest history record from an earlier Cairo date. History only saves complete data.
 - Every number on the image has a `data-verify` attribute and is checked by text and by OCR. New numbers on the template need one.
-- Gemini: rules go in the prompt, not system_instruction, and the schema goes in response_json_schema (the other forms get 503 on the free tier). Busy → retry, then gemini-3.5-flash-lite.
+- Gemini: rules go in the prompt, not system_instruction, and the schema goes in response_json_schema (the other forms get 503 on the free tier). Busy → walk FALLBACK_MODELS (flash → lite), up to 3 passes 90s apart; 429 skips that model.
 - Posting requests are never retried automatically (duplicate risk). Every platform posts at most once per Cairo date.
 - 2 opportunities + 2 risks (POINTS_PER_COLUMN), ≤20 words each. FIT_TEXT_JS shrinks analysis/tip text in 0.5px steps
   on long days (never below 21px / 18px); the overflow check remains the final guard.

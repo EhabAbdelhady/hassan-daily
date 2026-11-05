@@ -109,9 +109,10 @@ jobs:
           pip install -q python-dotenv requests
           python -c "
           from src.notify import send_alert
-          send_alert('today\'s automatic run did not start in time', [
-              'The daily start signal arrived at $(TZ=Africa/Cairo date +%H:%M) Cairo time, after the ' + '$WINDOW_END_CAIRO'[:2] + ':00 cutoff.',
-              'Nothing was prepared or posted today.',
+          send_alert('today\'s automatic run did not complete', [
+              'No attempt before the ' + '$WINDOW_END_CAIRO'[:2] + ':00 cutoff succeeded (a start signal arrived at $(TZ=Africa/Cairo date +%H:%M) Cairo time).',
+              'Either the starts did not arrive in time, or every attempt failed (see any earlier alert emails today).',
+              'Nothing was posted today.',
               'To post today anyway: GitHub → Actions → Daily infographic → Run workflow (untick Dry run).',
               'If this keeps happening, check the cron-job.org job (README: Daily start: cron-job.org).'])
           "
@@ -120,16 +121,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/last_missed_alert.txt
           git commit -m "Missed run alert $(TZ=Africa/Cairo date +%F)"
-          git pull --rebase && git push
-
-      - name: Mark today's automatic run as started
-        if: steps.gate.outputs.run == 'true' && env.AUTO_RUN == 'true'
-        run: |
-          TZ=Africa/Cairo date +%F > data/last_scheduled_run.txt
-          git config user.name "hassan-daily-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/last_scheduled_run.txt
-          git commit -m "Scheduled run $(TZ=Africa/Cairo date +%F)"
           git pull --rebase && git push
 
       - name: Cancel yesterday's unanswered approval requests
@@ -157,12 +148,15 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: python main.py prepare
 
-      - name: Save price history
+      - name: Save price history (and mark today's automatic run as done, so later starts skip)
         if: steps.prepare.outcome == 'success'
         run: |
+          # Marked only after a successful prepare: if an attempt fails (e.g. the AI is busy),
+          # the next start (cron-job.org sends 12:05, 12:35, 13:05, 13:35) tries again.
+          if [ "$AUTO_RUN" = "true" ]; then TZ=Africa/Cairo date +%F > data/last_scheduled_run.txt; fi
           git config user.name "hassan-daily-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/history.json
+          git add data/history.json data/last_scheduled_run.txt 2>/dev/null || git add data/history.json
           git diff --cached --quiet || git commit -m "Price history $(TZ=Africa/Cairo date +%F)"
           git pull --rebase && git push
 

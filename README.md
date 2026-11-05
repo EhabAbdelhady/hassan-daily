@@ -151,7 +151,7 @@ Instagram needs the image at a public web address; Cloudinary provides it.
 **Why public?** On GitHub's free plan, the approval button (required reviewers) only works on public repositories, and run minutes are unlimited. Anyone can see the code, the price history, and the images in `assets/`; your keys stay hidden in Secrets.
 
 ### 5b. Daily start: cron-job.org (free)
-GitHub's own scheduler is unreliable for small repositories (it has started this one 6+ hours late, or not at all), so a free "alarm clock" service starts the run at exactly 12:05 Cairo time.
+GitHub's own scheduler is unreliable for small repositories (it has started this one 6+ hours late, or not at all), so a free "alarm clock" service starts the run at **12:05, 12:35, 13:05 and 13:35** Cairo time. The first attempt that succeeds does the day's post; the later starts see the day is done and stop. If an attempt fails (for example Google's free AI is overloaded), you get an alert and the next start tries again.
 
 1. **A start token on GitHub:** **github.com/settings/personal-access-tokens/new**
    - Name `hassan-daily-start`, expiration: the longest offered (renew it before it expires).
@@ -162,7 +162,7 @@ GitHub's own scheduler is unreliable for small repositories (it has started this
 3. **Create the job:** **Cronjobs → Create cronjob**
    - Title: `Hassan Daily start`
    - URL: `https://api.github.com/repos/YOUR-USERNAME/hassan-daily/actions/workflows/daily.yml/dispatches`
-   - Schedule: **Every day at 12:05**, time zone **Africa/Cairo** (summer/winter time is handled automatically).
+   - Schedule: **Every day** at **12:05, 12:35, 13:05, 13:35** (custom: hours 12 and 13, minutes 5 and 35), time zone **Africa/Cairo** (summer/winter time is handled automatically). The easiest way is the helper: put `GITHUB_START_TOKEN` and `CRONJOB_API_KEY` in `.env` and run `.venv/bin/python scripts/cronjob_setup.py`.
    - Notifications: tick **when execution fails**.
    - **Advanced** tab:
      - Request method: **POST**
@@ -174,7 +174,7 @@ GitHub's own scheduler is unreliable for small repositories (it has started this
      - Request body: `{"ref":"main","inputs":{"trigger":"scheduled"}}`
    - **Create**. Use **Test run** once: it should answer **204**, and GitHub's Actions page shows a new run.
 
-If the start ever arrives after 14:00 (or not at all and GitHub's backup schedule arrives late), you get an email: **"today's automatic run did not start in time"**. To post that day anyway: **Actions → Daily infographic → Run workflow** (untick "Dry run").
+If no attempt has succeeded by 14:00, you get an email: **"today's automatic run did not complete"**. To post that day anyway: **Actions → Daily infographic → Run workflow** (untick "Dry run").
 
 ### 6. Instagram (when you're ready)
 1. In the Instagram app: **Settings → Account type and tools → Switch to professional account**.

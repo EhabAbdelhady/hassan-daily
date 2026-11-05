@@ -130,7 +130,7 @@ def send_alert(reason: str, problems: List[str], data: Optional[Dict[str, Any]] 
   <ul style="line-height:1.6">{items}</ul>
   {"<h3>Numbers fetched</h3>" + _price_rows(data) if data else ""}
   {'<h3>Image (not posted)</h3><img src="cid:preview" width="540" style="border:1px solid #e2e8f0;max-width:100%">' if png else ""}
-  <p style="color:#64748b;font-size:12px">The run can be repeated once the problem is fixed. See the README section "When you get an alert email".</p>
+  <p style="color:#64748b;font-size:12px">Automatic runs try again at the next start time (12:35, 13:05, 13:35 Cairo) until one succeeds, so a temporary problem may fix itself. See the README section "When you get an alert email".</p>
 </div>"""
     date = data["date"] if data else ""
     _send(f"⚠️ HASSAN DAILY: not posted {date} – {reason}", body, image=png)

@@ -1,4 +1,4 @@
-"""Creates (or updates) the cron-job.org job that starts the daily run at 12:05 Cairo time.
+"""Creates (or updates) the cron-job.org job that starts the daily run (12:05, retries until 13:35 Cairo).
 
 Needs in .env:
   GITHUB_REPO=owner/hassan-daily
@@ -18,7 +18,8 @@ from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parent.parent
 TITLE = "Hassan Daily start"
-HOUR, MINUTE, TIMEZONE = 12, 5, "Africa/Cairo"
+# 12:05, 12:35, 13:05, 13:35 Cairo: the first attempt that succeeds marks the day done; the others skip
+HOURS, MINUTES, TIMEZONE = [12, 13], [5, 35], "Africa/Cairo"
 
 
 def main() -> int:
@@ -57,7 +58,7 @@ def main() -> int:
         "enabled": True,
         "saveResponses": True,
         "requestMethod": 1,  # POST
-        "schedule": {"timezone": TIMEZONE, "expiresAt": 0, "hours": [HOUR], "minutes": [MINUTE],
+        "schedule": {"timezone": TIMEZONE, "expiresAt": 0, "hours": HOURS, "minutes": MINUTES,
                      "mdays": [-1], "months": [-1], "wdays": [-1]},
         "extendedData": {"headers": headers, "body": body},
         "notification": {"onFailure": True, "onFailureCount": 1, "onSuccess": False, "onDisable": True},
@@ -78,7 +79,8 @@ def main() -> int:
     if r.status_code != 200:
         print(f"Saving the job failed ({r.status_code}): {r.text[:200]}")
         return 1
-    print(f"cron-job.org job {action} (id {job_id}): every day at {HOUR:02d}:{MINUTE:02d} {TIMEZONE}, email on failure")
+    times = ", ".join(f"{h:02d}:{m:02d}" for h in HOURS for m in MINUTES)
+    print(f"cron-job.org job {action} (id {job_id}): every day at {times} {TIMEZONE}, email on failure")
     return 0
 
 

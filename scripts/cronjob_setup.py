@@ -11,6 +11,7 @@ Keys are never printed.
 
 import json
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -49,9 +50,24 @@ def main() -> int:
         return 1
     print("Start token works (GitHub accepted a test start)")
 
-    # 2. Create or update the cron-job.org job
-    api = requests.Session()
-    api.headers.update({"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"})
+    # 2. Create or update the cron-job.org job (its API is sometimes slow: retry patiently)
+    session = requests.Session()
+    session.headers.update({"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"})
+
+    class Patient:
+        def __getattr__(self, method):
+            def call(*args, **kwargs):
+                kwargs["timeout"] = 90
+                for attempt in range(1, 6):
+                    try:
+                        return getattr(session, method)(*args, **kwargs)
+                    except requests.RequestException as e:
+                        print(f"cron-job.org didn't answer ({type(e).__name__}), retrying ({attempt}/5)...")
+                        time.sleep(20)
+                raise SystemExit("cron-job.org is not reachable right now. Try again later.")
+            return call
+
+    api = Patient()
     job = {
         "title": TITLE,
         "url": url,
@@ -63,17 +79,17 @@ def main() -> int:
         "extendedData": {"headers": headers, "body": body},
         "notification": {"onFailure": True, "onFailureCount": 1, "onSuccess": False, "onDisable": True},
     }
-    r = api.get("https://api.cron-job.org/jobs", timeout=30)
+    r = api.get("https://api.cron-job.org/jobs")
     if r.status_code != 200:
         print(f"cron-job.org rejected the API key ({r.status_code}). Check CRONJOB_API_KEY.")
         return 1
     existing = [j for j in r.json().get("jobs", []) if j.get("title") == TITLE]
     if existing:
         job_id = existing[0]["jobId"]
-        r = api.patch(f"https://api.cron-job.org/jobs/{job_id}", json={"job": job}, timeout=30)
+        r = api.patch(f"https://api.cron-job.org/jobs/{job_id}", json={"job": job})
         action = "updated"
     else:
-        r = api.put("https://api.cron-job.org/jobs", json={"job": job}, timeout=30)
+        r = api.put("https://api.cron-job.org/jobs", json={"job": job})
         job_id = r.json().get("jobId") if r.status_code == 200 else None
         action = "created"
     if r.status_code != 200:
